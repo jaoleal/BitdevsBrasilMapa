@@ -17,7 +17,7 @@
                 <h1>BitDevs<span>/br</span></h1>
                 <a
                     class="contribute-btn"
-                    href="https://github.com/SEU_ORG/bitdevs-br/blob/main/README.md"
+                    href="https://github.com/jaoleal/BitdevsBrasilMapa/blob/master/README.md"
                     target="_blank"
                     >+ adicionar cidade</a
                 >
@@ -25,7 +25,7 @@
             <div class="subtitle">
                 mapa dos encontros · dados em
                 <a
-                    href="https://github.com/SEU_ORG/bitdevs-br/blob/main/bitdevs.json"
+                    href="https://github.com/jaoleal/BitdevsBrasilMapa/blob/master/bitdevs.json"
                     target="_blank"
                     >bitdevs.json</a
                 >
@@ -49,6 +49,8 @@
 
         <div id="loading">carregando...</div>
         <div id="timeline" style="display: none"></div>
+
+        <div id="assinantes" style="display: none"></div>
 
         <footer>
             <span
@@ -134,6 +136,23 @@
 
                 const events = [];
                 for (const g of groups) {
+                    if (!g.regradata) {
+                        // data irregular — usa 1 de abril de cada ano no intervalo
+                        for (
+                            let y = start.getFullYear();
+                            y <= endDate.getFullYear();
+                            y++
+                        ) {
+                            const d = new Date(y, 3, 1); // abril = 3
+                            if (d >= start && d <= endDate)
+                                events.push({
+                                    group: g,
+                                    date: d,
+                                    irregular: true,
+                                });
+                        }
+                        continue;
+                    }
                     let cur = new Date(start);
                     while (cur <= endDate) {
                         const d = computeDate(
@@ -261,6 +280,7 @@
           ${e.group.horario ? `<span>${e.group.horario}</span>` : ""}
           ${e.group.notes ? `<span style="color:#444">${e.group.notes}</span>` : ""}
         </span>
+        ${e.irregular ? `<span class="conflict-flag">? data irregular — consulte o site</span>` : ""}
         ${e.conflict ? `<span class="conflict-flag">⚡ conflito com ${cWith}</span>` : ""}
       `;
 
@@ -282,6 +302,46 @@
 
                     timeline.appendChild(div);
                 }
+            }
+
+            function renderAssinantes(assinantes) {
+                const container = document.getElementById("assinantes");
+                if (!assinantes.length) return;
+
+                container.style.display = "block";
+                container.innerHTML = "";
+
+                const header = document.createElement("div");
+                header.className = "assinantes-header";
+                header.textContent = "Assinantes";
+                container.appendChild(header);
+
+                const grid = document.createElement("div");
+                grid.className = "assinantes-grid";
+
+                for (const a of assinantes) {
+                    const card = document.createElement("div");
+                    card.className = "assinante-card";
+
+                    const fp = a.pgp_fingerprint
+                        ? a.pgp_fingerprint.slice(-8).toUpperCase()
+                        : "—";
+
+                    card.innerHTML = `
+                        <img class="assinante-avatar" src="${a.avatar}" alt="${a.github_user}" loading="lazy" />
+                        <div class="assinante-info">
+                            <a class="assinante-user" href="${a.github}" target="_blank">${a.github_user}</a>
+                            <div class="assinante-meta">
+                                <span class="assinante-bitdev">${a.bitdev_id}</span>
+                                <span class="assinante-fp">${fp}</span>
+                            </div>
+                        </div>
+                    `;
+
+                    grid.appendChild(card);
+                }
+
+                container.appendChild(grid);
             }
 
             async function init() {
@@ -338,6 +398,12 @@
 
                 const evts = generateEvents(allGroups, months);
                 render(allGroups, evts);
+
+                try {
+                    const assinanteRes = await fetch("assinantes.json");
+                    const assinantes = await assinanteRes.json();
+                    renderAssinantes(assinantes);
+                } catch (e) {}
             }
 
             init();

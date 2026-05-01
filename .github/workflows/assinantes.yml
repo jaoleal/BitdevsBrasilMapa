@@ -1,0 +1,59 @@
+name: Gerar assinantes.json
+
+on:
+  push:
+    branches: [master]
+    paths: ['assinaturas/*.asc']
+
+jobs:
+  gerar:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Gerar assinantes.json
+        run: |
+          echo '[' > assinantes_tmp.json
+          first=true
+          for asc in assinaturas/*.asc; do
+            [ -f "$asc" ] || continue
+            id=$(basename "$asc" .asc)
+
+            # fingerprint da chave que assinou
+            fp=$(gpg --list-packets "$asc" 2>/dev/null \
+              | grep -oP 'keyid \K[A-F0-9]+' | head -1)
+
+            # autor do ultimo commit que tocou esse arquivo
+            email=$(git log -1 --format='%aE' -- "$asc")
+            # extrai username do noreply do github, senao usa parte antes do @
+            user=$(echo "$email" \
+              | grep -oP '^\d+\+\K[^@]+(?=@users\.noreply\.github\.com)' \
+              || echo "$email" | cut -d@ -f1)
+
+            if [ "$first" = true ]; then first=false; else echo ',' >> assinantes_tmp.json; fi
+            cat >> assinantes_tmp.json <<EOF
+          {
+            "bitdev_id": "$id",
+            "github_user": "$user",
+            "avatar": "https://github.com/$user.png",
+            "github": "https://github.com/$user",
+            "pgp_fingerprint": "$fp"
+          }
+          EOF
+          done
+          echo ']' >> assinantes_tmp.json
+
+          jq '.' assinantes_tmp.json > assinantes.json
+          rm -f assinantes_tmp.json
+
+      - name: Commit assinantes.json
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add assinantes.json
+          git diff --cached --quiet || git commit -m "assinantes.json: atualizar"
+          git push

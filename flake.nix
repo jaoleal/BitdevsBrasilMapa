@@ -60,16 +60,19 @@
                     fi
                   done
 
-                  semana=$(echo "$entry" | jq '.regradata.semana // empty')
-                  if [[ -z "$semana" ]] || ! echo "$semana" | grep -qE '^-?[12]$'; then
-                    echo "ERRO [$id]: regradata.semana inválido ($semana) — esperado: 1, 2, -1, -2"
-                    errors=$((errors + 1))
-                  fi
+                  regradata_null=$(echo "$entry" | jq '.regradata == null')
+                  if [[ "$regradata_null" == "false" ]]; then
+                    semana=$(echo "$entry" | jq '.regradata.semana // empty')
+                    if [[ -z "$semana" ]] || ! echo "$semana" | grep -qE '^-?[12]$'; then
+                      echo "ERRO [$id]: regradata.semana inválido ($semana) — esperado: 1, 2, -1, -2"
+                      errors=$((errors + 1))
+                    fi
 
-                  dia=$(echo "$entry" | jq '.regradata.dia // empty')
-                  if [[ -z "$dia" ]] || ! echo "$dia" | grep -qE '^[0-6]$'; then
-                    echo "ERRO [$id]: regradata.dia inválido ($dia) — esperado: 0-6"
-                    errors=$((errors + 1))
+                    dia=$(echo "$entry" | jq '.regradata.dia // empty')
+                    if [[ -z "$dia" ]] || ! echo "$dia" | grep -qE '^[0-6]$'; then
+                      echo "ERRO [$id]: regradata.dia inválido ($dia) — esperado: 0-6"
+                      errors=$((errors + 1))
+                    fi
                   fi
                 done
 
@@ -85,6 +88,7 @@
           devShells.default = pkgs.mkShell {
             packages = [
               pkgs.python3Packages.livereload
+              pkgs.jq
             ];
 
             shellHook = ''

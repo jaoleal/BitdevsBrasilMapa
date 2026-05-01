@@ -6,7 +6,22 @@ Serve pra responder:
 - Bitdevs X acontece no mesmo dia que Bitdevs Y ?
 - Tem algum link de evento para Bitdevs X ? Se sim, Qual ?
 
-🌐 **[bitdevs-br.github.io](https://SEU_ORG.github.io/bitdevs-br)**
+🌐 **[jaoleal.github.io/BitdevsBrasilMapa](https://jaoleal.github.io/BitdevsBrasilMapa)**
+
+---
+
+## Sumario
+
+- [Adicionar cidade / Corrigir data](#quero-adicionar-minha-cidade--corrigir-uma-data)
+  - [Formato](#formato)
+  - [Regra de recorrencia](#regra-de-recorrência-regradata)
+  - [Checklist do PR](#checklist-do-pr)
+- [Assinando seu BitDev](#assinando-seu-bitdev)
+  - [Como assinar](#como-assinar)
+  - [Como verificar](#como-verificar)
+  - [No PR](#no-pr)
+  - [Secao de assinantes no site](#seção-de-assinantes-no-site)
+- [Desenvolvimento local](#desenvolvimento-local)
 
 ---
 
@@ -22,15 +37,15 @@ Abra um PR editando o arquivo [`bitdevs.json`](./bitdevs.json).
   "nome": "BitDevs São Paulo",
   "cidade": "São Paulo",
   "estado": "SP",
-  "regradata": { "semana": -1, "dia": 2 },
+  "regradata": { "semana": -1, "dia": 4 },
   "horario": "19:00", // horário local (opcional)
   "linktopicos": "https://...", // site ou meetup (opcional)
-  "linkevento": "https://..."
+  "linkevento": "https://...",
   "notes": "Última terça-feira, aperte a campainha tres vezes" // descrição humana da regra e instrucoes adversas
 }
 ```
 
-### Regra de recorrência (`rule`)
+### Regra de recorrência (`regradata`)
 
 | campo    | valores                                                             |
 | -------- | ------------------------------------------------------------------- |
@@ -46,11 +61,50 @@ Abra um PR editando o arquivo [`bitdevs.json`](./bitdevs.json).
 | Segunda terça-feira do mês    | `{ "semana": 2,  "dia": 2 }` |
 | Primeiro sábado do mês        | `{ "semana": 1,  "dia": 6 }` |
 
-### Checklist do PR
+---
 
-- [ ] `id` é único e em slug curto (ex: `"fortaleza"`)
-- [ ] `rule` foi testada — a data gerada bate com os encontros anteriores
-- [ ] `notes` descreve a regra em português para humanos
+## Assinando seu BitDev
+
+Cada contribuidor assina **apenas a sua propria entrada** no `bitdevs.json`, isolada com `jq`. Assim, quando outra cidade eh adicionada ou alterada, a sua assinatura continua valida.
+
+As assinaturas ficam no diretorio [`assinaturas/`](./assinaturas/), nomeadas pelo `id` da entrada: `assinaturas/<id>.asc`.
+
+### Como assinar
+
+```sh
+# extrai sua entrada e assina
+jq '.[] | select(.id == "sp")' bitdevs.json | gpg --detach-sign --armor -o assinaturas/sp.asc
+```
+
+Substitua `"sp"` pelo `id` do seu BitDev.
+
+### Como verificar
+
+```sh
+# extrai a mesma entrada e verifica contra a assinatura
+jq '.[] | select(.id == "sp")' bitdevs.json | gpg --verify assinaturas/sp.asc -
+```
+
+Se a entrada no JSON nao foi alterada desde a assinatura, a verificacao passa.
+
+### No PR
+
+- Inclua o arquivo `assinaturas/<id>.asc` junto com sua alteracao no `bitdevs.json`
+- Sua chave publica deve estar disponivel em um keyserver ou no seu perfil do GitHub (`https://github.com/<usuario>.gpg`)
+- Se voce alterar sua entrada, reassine e atualize o `.asc`
+
+### Seção de assinantes no site
+
+Quando um `.asc` eh mergeado no master, um workflow do CI gera automaticamente o arquivo `assinantes.json` com:
+
+- **Avatar** do GitHub (via `https://github.com/<user>.png`)
+- **Link** para o perfil do GitHub
+- **Fingerprint PGP** extraido da assinatura
+- **ID do BitDev** correspondente
+
+Esses dados alimentam a secao "Assinantes" no site. Nao eh necessario editar `assinantes.json` manualmente — o CI cuida disso.
+
+---
 
 ## Desenvolvimento local
 
