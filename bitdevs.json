@@ -1,0 +1,68 @@
+[
+  {
+    "id": "sp",
+    "nome": "BitDevs São Paulo",
+    "cidade": "São Paulo",
+    "estado": "SP",
+    "regradata": { "semana": -1, "dia": 2 },
+    "horario": "19:00",
+    "linktopicos": "https://bitdevs.org",
+    "linkevento": "",
+    "notes": "Última terça-feira do mês"
+  },
+  {
+    "id": "rj",
+    "nome": "BitDevs Rio de Janeiro",
+    "cidade": "Rio de Janeiro",
+    "estado": "RJ",
+    "regradata": { "semana": -2, "dia": 3 },
+    "horario": "19:00",
+    "linktopicos": "",
+    "linkevento": "",
+    "notes": "Penúltima quarta-feira do mês"
+  },
+  {
+    "id": "bh",
+    "nome": "BitDevs Belo Horizonte",
+    "cidade": "Belo Horizonte",
+    "estado": "MG",
+    "regradata": { "semana": -1, "dia": 4 },
+    "horario": "19:00",
+    "linktopicos": "",
+    "linkevento": "",
+    "notes": "Última quinta-feira do mês"
+  },
+  {
+    "id": "bsb",
+    "nome": "BitDevs Brasília",
+    "cidade": "Brasília",
+    "estado": "DF",
+    "regradata": { "semana": 2, "dia": 4 },
+    "horario": "19:00",
+    "linktopicos": "",
+    "linkevento": "",
+    "notes": "Segunda quinta-feira do mês"
+  },
+  {
+    "id": "poa",
+    "nome": "BitDevs Porto Alegre",
+    "cidade": "Porto Alegre",
+    "estado": "RS",
+    "regradata": { "semana": -1, "dia": 3 },
+    "horario": "19:00",
+    "linktopicos": "",
+    "linkevento": "",
+    "notes": "Última quarta-feira do mês"
+  },
+  {
+    "id": "cwb",
+    "nome": "BitDevs Curitiba",
+    "cidade": "Curitiba",
+    "estado": "PR",
+    "regradata": { "semana": 2, "dia": 2 },
+    "horario": "19:00",
+    "linktopicos": "",
+    "linkevento": "",
+    "notes": "Segunda terça-feira do mês"
+  }
+]

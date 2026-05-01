@@ -1,0 +1,16 @@
+name: Validate bitdevs.json
+
+on:
+  pull_request:
+    paths: [bitdevs.json]
+  push:
+    branches: [master]
+    paths: [bitdevs.json]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: DeterminateSystems/nix-installer-action@main
+      - run: nix flake check

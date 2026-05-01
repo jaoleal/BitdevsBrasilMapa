@@ -1,0 +1,346 @@
+<!doctype html>
+<html lang="pt-BR">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>BitDevs Brasil — Agenda</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link
+            href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600;700&family=Fragment+Mono&display=swap"
+            rel="stylesheet"
+        />
+        <link rel="stylesheet" href="style.css" />
+    </head>
+    <body>
+        <header>
+            <div class="header-top">
+                <h1>BitDevs<span>/br</span></h1>
+                <a
+                    class="contribute-btn"
+                    href="https://github.com/SEU_ORG/bitdevs-br/blob/main/README.md"
+                    target="_blank"
+                    >+ adicionar cidade</a
+                >
+            </div>
+            <div class="subtitle">
+                mapa dos encontros · dados em
+                <a
+                    href="https://github.com/SEU_ORG/bitdevs-br/blob/main/bitdevs.json"
+                    target="_blank"
+                    >bitdevs.json</a
+                >
+                · abra um PR para adicionar ou corrigir
+            </div>
+        </header>
+
+        <div id="legend"></div>
+
+        <div id="controls">
+            <span class="ctrl-label">exibir:</span>
+            <div class="range-btns">
+                <button class="range-btn active" data-months="3">
+                    3 meses
+                </button>
+                <button class="range-btn" data-months="6">6 meses</button>
+                <button class="range-btn" data-months="12">12 meses</button>
+            </div>
+            <span id="conflict-badge">⚠ conflitos encontrados</span>
+        </div>
+
+        <div id="loading">carregando...</div>
+        <div id="timeline" style="display: none"></div>
+
+        <footer>
+            <span
+                >dados: <a href="bitdevs.json">bitdevs.json</a> — edite via
+                PR</span
+            >
+            <span
+                >BitDevs é um encontro de estudo de Bitcoin inspirado no
+                <a href="https://bitdevs.org" target="_blank"
+                    >NYC BitDevs</a
+                ></span
+            >
+        </footer>
+
+        <script>
+            const PALETTE = [
+                "#f7931a",
+                "#4ade80",
+                "#60a5fa",
+                "#f472b6",
+                "#a78bfa",
+                "#fb923c",
+                "#34d399",
+                "#e879f9",
+                "#facc15",
+                "#38bdf8",
+            ];
+
+            const WEEKDAYS = ["dom", "seg", "ter", "qua", "qui", "sex", "sáb"];
+            const WEEKDAYS_FULL = [
+                "domingo",
+                "segunda",
+                "terça",
+                "quarta",
+                "quinta",
+                "sexta",
+                "sábado",
+            ];
+            const MONTHS_PT = [
+                "Janeiro",
+                "Fevereiro",
+                "Março",
+                "Abril",
+                "Maio",
+                "Junho",
+                "Julho",
+                "Agosto",
+                "Setembro",
+                "Outubro",
+                "Novembro",
+                "Dezembro",
+            ];
+
+            // semana: 1=primeiro, 2=segundo, -1=último, -2=penúltimo
+            // dia: 0=dom ... 6=sáb (igual ao JS Date.getDay())
+            function computeDate(year, month, regradata) {
+                const { semana, dia } = regradata;
+                if (semana > 0) {
+                    const first = new Date(year, month, 1);
+                    const diff = (dia - first.getDay() + 7) % 7;
+                    const day = 1 + diff + (semana - 1) * 7;
+                    const d = new Date(year, month, day);
+                    if (d.getMonth() !== month) return null;
+                    return d;
+                } else {
+                    const last = new Date(year, month + 1, 0);
+                    const diff = (last.getDay() - dia + 7) % 7;
+                    const day = last.getDate() - diff + (semana + 1) * 7;
+                    const d = new Date(year, month, day);
+                    if (d.getMonth() !== month) return null;
+                    return d;
+                }
+            }
+
+            function generateEvents(groups, months) {
+                const now = new Date();
+                const start = new Date(now.getFullYear(), now.getMonth(), 1);
+                const endDate = new Date(
+                    now.getFullYear(),
+                    now.getMonth() + months,
+                    0,
+                );
+
+                const events = [];
+                for (const g of groups) {
+                    let cur = new Date(start);
+                    while (cur <= endDate) {
+                        const d = computeDate(
+                            cur.getFullYear(),
+                            cur.getMonth(),
+                            g.regradata,
+                        );
+                        if (d) events.push({ group: g, date: d });
+                        cur.setMonth(cur.getMonth() + 1);
+                    }
+                }
+
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                return events
+                    .filter((e) => e.date >= today)
+                    .sort((a, b) => a.date - b.date);
+            }
+
+            function markConflicts(events) {
+                const byDate = {};
+                for (const e of events) {
+                    const key = e.date.toISOString().slice(0, 10);
+                    byDate[key] = byDate[key] || [];
+                    byDate[key].push(e);
+                }
+                for (const evs of Object.values(byDate)) {
+                    if (evs.length > 1)
+                        evs.forEach((e) => {
+                            e.conflict = true;
+                            e.conflictWith = evs;
+                        });
+                }
+                return events;
+            }
+
+            function groupByMonth(events) {
+                const map = new Map();
+                for (const e of events) {
+                    const key = `${e.date.getFullYear()}-${e.date.getMonth()}`;
+                    if (!map.has(key))
+                        map.set(key, {
+                            year: e.date.getFullYear(),
+                            month: e.date.getMonth(),
+                            events: [],
+                        });
+                    map.get(key).events.push(e);
+                }
+                return [...map.values()];
+            }
+
+            function fmtDate(d) {
+                const day = String(d.getDate()).padStart(2, "0");
+                const mon = String(d.getMonth() + 1).padStart(2, "0");
+                return `${day}/${mon}`;
+            }
+
+            let activeGroups = new Set();
+            let allGroups = [];
+            let months = 3;
+
+            function render(groups, eventsAll) {
+                const events = eventsAll.filter((e) =>
+                    activeGroups.has(e.group.id),
+                );
+                markConflicts(events);
+
+                const hasConflict = events.some((e) => e.conflict);
+                const badge = document.getElementById("conflict-badge");
+                badge.classList.toggle("visible", hasConflict);
+
+                const timeline = document.getElementById("timeline");
+                timeline.innerHTML = "";
+
+                if (!events.length) {
+                    timeline.innerHTML =
+                        '<div style="padding:40px;color:var(--muted)">nenhum evento no período.</div>';
+                    return;
+                }
+
+                const byMonth = groupByMonth(events);
+
+                for (const { year, month, events: mes } of byMonth) {
+                    const conflicts = mes.filter((e) => e.conflict).length;
+                    const div = document.createElement("div");
+                    div.className = "month-block";
+
+                    const header = document.createElement("div");
+                    header.className = "month-header";
+                    header.innerHTML = `<span>${MONTHS_PT[month]} ${year}</span>${conflicts ? `<span class="month-conflict-count">⚠ ${conflicts} conflito${conflicts > 1 ? "s" : ""}</span>` : ""}`;
+                    div.appendChild(header);
+
+                    for (const e of mes) {
+                        const colorIdx =
+                            allGroups.findIndex((g) => g.id === e.group.id) %
+                            PALETTE.length;
+                        const color = PALETTE[colorIdx];
+
+                        const row = document.createElement("div");
+                        row.className =
+                            "event-row" + (e.conflict ? " conflict" : "");
+
+                        const dateEl = document.createElement("div");
+                        dateEl.className = "event-date";
+                        dateEl.innerHTML = `${fmtDate(e.date)} <span class="dow">${WEEKDAYS[e.date.getDay()]}</span>`;
+
+                        const dot = document.createElement("div");
+                        dot.className = "event-dot";
+                        dot.style.background = color;
+
+                        const info = document.createElement("div");
+                        info.className = "event-info";
+
+                        const cWith = e.conflict
+                            ? e.conflictWith
+                                  .filter((x) => x.group.id !== e.group.id)
+                                  .map((x) => x.group.cidade)
+                                  .join(", ")
+                            : "";
+
+                        info.innerHTML = `
+        <span class="event-name" style="color:${color}">${e.group.nome}</span>
+        <span class="event-meta">
+          <span>${e.group.cidade} — ${e.group.estado}</span>
+          ${e.group.horario ? `<span>${e.group.horario}</span>` : ""}
+          ${e.group.notes ? `<span style="color:#444">${e.group.notes}</span>` : ""}
+        </span>
+        ${e.conflict ? `<span class="conflict-flag">⚡ conflito com ${cWith}</span>` : ""}
+      `;
+
+                        const link = document.createElement("a");
+                        link.className = "event-link";
+                        if (e.group.linktopicos) {
+                            link.href = e.group.linktopicos;
+                            link.target = "_blank";
+                            link.textContent = "↗";
+                        }
+
+                        row.appendChild(dateEl);
+                        row.appendChild(dot);
+                        row.appendChild(info);
+                        if (e.group.linktopicos) row.appendChild(link);
+
+                        div.appendChild(row);
+                    }
+
+                    timeline.appendChild(div);
+                }
+            }
+
+            async function init() {
+                const loading = document.getElementById("loading");
+                const timeline = document.getElementById("timeline");
+
+                let groups;
+                try {
+                    const res = await fetch("bitdevs.json");
+                    groups = await res.json();
+                } catch (e) {
+                    loading.textContent = "erro ao carregar bitdevs.json";
+                    return;
+                }
+
+                allGroups = groups;
+                activeGroups = new Set(groups.map((g) => g.id));
+
+                loading.style.display = "none";
+                timeline.style.display = "block";
+
+                const legend = document.getElementById("legend");
+                groups.forEach((g, i) => {
+                    const color = PALETTE[i % PALETTE.length];
+                    const item = document.createElement("div");
+                    item.className = "legend-item";
+                    item.dataset.id = g.id;
+                    item.innerHTML = `<div class="legend-dot" style="background:${color}"></div>${g.cidade}`;
+                    item.addEventListener("click", () => {
+                        if (activeGroups.has(g.id)) {
+                            activeGroups.delete(g.id);
+                            item.classList.add("inactive");
+                        } else {
+                            activeGroups.add(g.id);
+                            item.classList.remove("inactive");
+                        }
+                        const evts = generateEvents(allGroups, months);
+                        render(allGroups, evts);
+                    });
+                    legend.appendChild(item);
+                });
+
+                document.querySelectorAll(".range-btn").forEach((btn) => {
+                    btn.addEventListener("click", () => {
+                        document
+                            .querySelectorAll(".range-btn")
+                            .forEach((b) => b.classList.remove("active"));
+                        btn.classList.add("active");
+                        months = parseInt(btn.dataset.months);
+                        const evts = generateEvents(allGroups, months);
+                        render(allGroups, evts);
+                    });
+                });
+
+                const evts = generateEvents(allGroups, months);
+                render(allGroups, evts);
+            }
+
+            init();
+        </script>
+    </body>
+</html>
