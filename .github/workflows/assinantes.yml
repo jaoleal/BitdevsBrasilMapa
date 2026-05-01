@@ -1,9 +1,12 @@
 name: Gerar assinantes.json
 
 on:
+  pull_request:
+    branches: [master]
+    paths: ["assinaturas/**/*.asc", "assinantes.json"]
   push:
     branches: [master]
-    paths: ["assinaturas/**/*.asc"]
+    paths: ["assinaturas/**/*.asc", "assinantes.json"]
 
 jobs:
   gerar:
@@ -46,6 +49,7 @@ jobs:
           rm -f assinantes_tmp.json
 
       - name: Commit assinantes.json
+        if: github.event_name == 'push'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
