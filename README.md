@@ -81,17 +81,7 @@ Assinantes sao pessoas que verificam e atestam que as informacoes de data e loca
 
 Se voce ja tem uma chave PGP, pode pular este passo.
 
-```sh
-gpg --full-generate-key
-```
-
-Recomendacoes:
-
-- Tipo: `ECC (sign only)` com curva `ed25519`, ou `RSA 4096`
-- Validade: 1 ano (voce pode renovar depois)
-- Use o mesmo email do seu perfil do GitHub
-
-Apos gerar, anote o fingerprint da sua chave:
+Existem varios tutoriais na internet que podem te ajudar melhor, por exemplo, [do proprio github.](https://docs.github.com/pt/authentication/managing-commit-signature-verification/generating-a-new-gpg-key)
 
 ```sh
 gpg --list-keys --keyid-format long
@@ -117,9 +107,6 @@ Apos isso, sua chave ficara disponivel em `https://github.com/seu-usuario.gpg`.
 Cada assinatura eh feita sobre a entrada isolada de um BitDev no `bitdevs.json`, extraida com `jq`. Isso garante que alteracoes em outras cidades nao invalidem sua assinatura.
 
 ```sh
-# Crie o diretorio do bitdev (se nao existir)
-mkdir -p assinaturas/sp
-
 # Extraia a entrada e assine
 jq '.[] | select(.id == "sp")' bitdevs.json \
   | gpg --detach-sign --armor -o assinaturas/sp/seu-usuario.asc
@@ -135,19 +122,19 @@ Edite o arquivo [`assinantes.json`](./assinantes.json) e adicione sua entrada:
 
 ```json
 {
-  "icone": "https://github.com/seu-usuario.png",
   "nome": "seu-usuario",
   "chave_pgp": "SEU_FINGERPRINT_DE_40_CARACTERES",
   "bitdevs_ids": ["sp", "bh"]
 }
 ```
 
-| campo         | descricao                                                    |
-| ------------- | ------------------------------------------------------------ |
-| `icone`       | URL do seu avatar (use `https://github.com/seu-usuario.png`) |
-| `nome`        | Seu username do GitHub                                       |
-| `chave_pgp`   | Fingerprint completo da sua chave PGP (40 caracteres hex)    |
-| `bitdevs_ids` | Lista dos `id`s dos BitDevs que voce assinou                 |
+| campo         | descricao                                                 |
+| ------------- | --------------------------------------------------------- |
+| `nome`        | Seu username do GitHub                                    |
+| `chave_pgp`   | Fingerprint completo da sua chave PGP (40 caracteres hex) |
+| `bitdevs_ids` | Lista dos `id`s dos BitDevs que voce assinou              |
+
+O avatar e o link para seu perfil sao derivados automaticamente do `nome`.
 
 ### Passo 5: Abrir o PR
 
