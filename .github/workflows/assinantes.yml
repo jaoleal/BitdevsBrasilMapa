@@ -1,9 +1,12 @@
 name: Gerar assinantes.json
 
 on:
+  pull_request:
+    branches: [master]
+    paths: ["assinaturas/**/*.asc", "assinantes.json"]
   push:
     branches: [master]
-    paths: ['assinaturas/*.asc']
+    paths: ["assinaturas/**/*.asc", "assinantes.json"]
 
 jobs:
   gerar:
@@ -19,28 +22,23 @@ jobs:
         run: |
           echo '[' > assinantes_tmp.json
           first=true
-          for asc in assinaturas/*.asc; do
+          for asc in assinaturas/*/*.asc; do
             [ -f "$asc" ] || continue
-            id=$(basename "$asc" .asc)
+            # assinaturas/<bitdev_id>/<github_user>.asc
+            bitdev_id=$(basename "$(dirname "$asc")")
+            github_user=$(basename "$asc" .asc)
 
             # fingerprint da chave que assinou
             fp=$(gpg --list-packets "$asc" 2>/dev/null \
               | grep -oP 'keyid \K[A-F0-9]+' | head -1)
 
-            # autor do ultimo commit que tocou esse arquivo
-            email=$(git log -1 --format='%aE' -- "$asc")
-            # extrai username do noreply do github, senao usa parte antes do @
-            user=$(echo "$email" \
-              | grep -oP '^\d+\+\K[^@]+(?=@users\.noreply\.github\.com)' \
-              || echo "$email" | cut -d@ -f1)
-
             if [ "$first" = true ]; then first=false; else echo ',' >> assinantes_tmp.json; fi
             cat >> assinantes_tmp.json <<EOF
           {
-            "bitdev_id": "$id",
-            "github_user": "$user",
-            "avatar": "https://github.com/$user.png",
-            "github": "https://github.com/$user",
+            "bitdev_id": "$bitdev_id",
+            "github_user": "$github_user",
+            "avatar": "https://github.com/$github_user.png",
+            "github": "https://github.com/$github_user",
             "pgp_fingerprint": "$fp"
           }
           EOF
@@ -51,6 +49,7 @@ jobs:
           rm -f assinantes_tmp.json
 
       - name: Commit assinantes.json
+        if: github.event_name == 'push'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
