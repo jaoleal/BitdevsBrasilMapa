@@ -1,16 +1,8 @@
 [
   {
-    "bitdev_id": "bh",
-    "github_user": "jaoleal",
-    "avatar": "https://github.com/jaoleal.png",
-    "github": "https://github.com/jaoleal",
-    "pgp_fingerprint": "851C2EF386C0A2E4"
-  },
-  {
-    "bitdev_id": "sp",
-    "github_user": "jaoleal",
-    "avatar": "https://github.com/jaoleal.png",
-    "github": "https://github.com/jaoleal",
-    "pgp_fingerprint": "851C2EF386C0A2E4"
+    "icone": "https://github.com/jaoleal.png",
+    "nome": "jaoleal",
+    "chave_pgp": "79F498EF30E0E2F32AC99AD4851C2EF386C0A2E4",
+    "bitdevs_ids": ["sp", "bh"]
   }
 ]

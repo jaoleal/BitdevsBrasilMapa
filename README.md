@@ -16,11 +16,15 @@ Serve pra responder:
   - [Formato](#formato)
   - [Regra de recorrencia](#regra-de-recorrência-regradata)
   - [Checklist do PR](#checklist-do-pr)
-- [Assinando seu BitDev](#assinando-seu-bitdev)
-  - [Como assinar](#como-assinar)
-  - [Como verificar](#como-verificar)
-  - [No PR](#no-pr)
-  - [Secao de assinantes no site](#seção-de-assinantes-no-site)
+- [Como se tornar assinante](#como-se-tornar-assinante)
+  - [Pre-requisitos](#pré-requisitos)
+  - [Passo 1: Gerar sua chave PGP](#passo-1-gerar-sua-chave-pgp)
+  - [Passo 2: Publicar sua chave](#passo-2-publicar-sua-chave)
+  - [Passo 3: Assinar um BitDev](#passo-3-assinar-um-bitdev)
+  - [Passo 4: Adicionar-se ao assinantes.json](#passo-4-adicionar-se-ao-assinantesjson)
+  - [Passo 5: Abrir o PR](#passo-5-abrir-o-pr)
+  - [Verificando assinaturas](#verificando-assinaturas)
+  - [Reassinando apos alteracoes](#reassinando-após-alterações)
 - [Desenvolvimento local](#desenvolvimento-local)
 
 ---
@@ -63,49 +67,120 @@ Abra um PR editando o arquivo [`bitdevs.json`](./bitdevs.json).
 
 ---
 
-## Assinando seu BitDev
+## Como se tornar assinante
 
-Cada contribuidor assina **apenas a entrada do BitDev** que quer atestar no `bitdevs.json`, isolada com `jq`. Assim, quando outra cidade eh adicionada ou alterada, a sua assinatura continua valida. Multiplas pessoas podem assinar o mesmo BitDev.
+Assinantes sao pessoas que verificam e atestam que as informacoes de data e local dos BitDevs estao corretas. Ao assinar, voce confirma publicamente que determinado BitDev acontece na data indicada. Sua assinatura e identidade ficam visiveis na secao "Assinantes" do site.
 
-As assinaturas ficam organizadas por BitDev e por usuario: `assinaturas/<id>/<seu-usuario-github>.asc`.
+### Pré-requisitos
 
-### Como assinar
+- Uma conta no GitHub
+- GPG instalado na sua maquina (`gpg --version` pra verificar)
+- Familiaridade basica com terminal e Git
+
+### Passo 1: Gerar sua chave PGP
+
+Se voce ja tem uma chave PGP, pode pular este passo.
 
 ```sh
-# cria o diretorio do bitdev se nao existir
-mkdir -p assinaturas/sp
-
-# extrai a entrada e assina
-jq '.[] | select(.id == "sp")' bitdevs.json | gpg --detach-sign --armor -o assinaturas/sp/seu-usuario.asc
+gpg --full-generate-key
 ```
 
-Substitua `"sp"` pelo `id` do BitDev e `seu-usuario` pelo seu username do GitHub.
+Recomendacoes:
 
-### Como verificar
+- Tipo: `ECC (sign only)` com curva `ed25519`, ou `RSA 4096`
+- Validade: 1 ano (voce pode renovar depois)
+- Use o mesmo email do seu perfil do GitHub
+
+Apos gerar, anote o fingerprint da sua chave:
 
 ```sh
-# extrai a mesma entrada e verifica contra a assinatura
-jq '.[] | select(.id == "sp")' bitdevs.json | gpg --verify assinaturas/sp/seu-usuario.asc -
+gpg --list-keys --keyid-format long
+```
+
+O fingerprint eh a string de 40 caracteres hexadecimais, ex: `79F498EF30E0E2F32AC99AD4851C2EF386C0A2E4`.
+
+### Passo 2: Publicar sua chave
+
+Sua chave publica precisa estar disponivel para que outros possam verificar sua assinatura. A forma mais simples eh adicionar ao seu perfil do GitHub:
+
+1. Exporte sua chave publica:
+   ```sh
+   gpg --armor --export seu-email@exemplo.com
+   ```
+2. Va em **GitHub > Settings > SSH and GPG keys > New GPG key**
+3. Cole a chave publica e salve
+
+Apos isso, sua chave ficara disponivel em `https://github.com/seu-usuario.gpg`.
+
+### Passo 3: Assinar um BitDev
+
+Cada assinatura eh feita sobre a entrada isolada de um BitDev no `bitdevs.json`, extraida com `jq`. Isso garante que alteracoes em outras cidades nao invalidem sua assinatura.
+
+```sh
+# Crie o diretorio do bitdev (se nao existir)
+mkdir -p assinaturas/sp
+
+# Extraia a entrada e assine
+jq '.[] | select(.id == "sp")' bitdevs.json \
+  | gpg --detach-sign --armor -o assinaturas/sp/seu-usuario.asc
+```
+
+Substitua `"sp"` pelo `id` do BitDev que voce quer assinar e `seu-usuario` pelo seu username do GitHub.
+
+Voce pode assinar quantos BitDevs quiser — basta repetir o processo para cada `id`.
+
+### Passo 4: Adicionar-se ao assinantes.json
+
+Edite o arquivo [`assinantes.json`](./assinantes.json) e adicione sua entrada:
+
+```json
+{
+  "icone": "https://github.com/seu-usuario.png",
+  "nome": "seu-usuario",
+  "chave_pgp": "SEU_FINGERPRINT_DE_40_CARACTERES",
+  "bitdevs_ids": ["sp", "bh"]
+}
+```
+
+| campo         | descricao                                                    |
+| ------------- | ------------------------------------------------------------ |
+| `icone`       | URL do seu avatar (use `https://github.com/seu-usuario.png`) |
+| `nome`        | Seu username do GitHub                                       |
+| `chave_pgp`   | Fingerprint completo da sua chave PGP (40 caracteres hex)    |
+| `bitdevs_ids` | Lista dos `id`s dos BitDevs que voce assinou                 |
+
+### Passo 5: Abrir o PR
+
+Seu PR deve conter:
+
+1. Os arquivos `.asc` em `assinaturas/<id>/seu-usuario.asc` para cada BitDev assinado
+2. Sua entrada adicionada no `assinantes.json`
+
+O CI vai verificar automaticamente se suas assinaturas sao validas contra as entradas correspondentes no `bitdevs.json`. Se alguma assinatura for invalida, o CI vai falhar.
+
+### Verificando assinaturas
+
+Para verificar manualmente se uma assinatura eh valida:
+
+```sh
+# Importe a chave publica do assinante (se necessario)
+curl -s https://github.com/seu-usuario.gpg | gpg --import
+
+# Verifique a assinatura
+jq '.[] | select(.id == "sp")' bitdevs.json \
+  | gpg --verify assinaturas/sp/seu-usuario.asc -
 ```
 
 Se a entrada no JSON nao foi alterada desde a assinatura, a verificacao passa.
 
-### No PR
+### Reassinando após alterações
 
-- Inclua o arquivo `assinaturas/<id>/<seu-usuario>.asc` junto com sua alteracao no `bitdevs.json`
-- Sua chave publica deve estar disponivel em um keyserver ou no seu perfil do GitHub (`https://github.com/<usuario>.gpg`)
-- Se a entrada do BitDev for alterada, todos os assinantes devem reassinar
+Se a entrada de um BitDev for alterada no `bitdevs.json` (ex: mudanca de horario ou dia), todas as assinaturas daquele BitDev serao invalidadas. Os assinantes devem gerar novas assinaturas:
 
-### Seção de assinantes no site
-
-Quando um `.asc` eh mergeado no master, um workflow do CI gera automaticamente o arquivo `assinantes.json` com:
-
-- **Avatar** do GitHub (via `https://github.com/<user>.png`)
-- **Link** para o perfil do GitHub
-- **Fingerprint PGP** extraido da assinatura
-- **ID do BitDev** correspondente
-
-Esses dados alimentam a secao "Assinantes" no site. Nao eh necessario editar `assinantes.json` manualmente — o CI cuida disso.
+```sh
+jq '.[] | select(.id == "sp")' bitdevs.json \
+  | gpg --detach-sign --armor -o assinaturas/sp/seu-usuario.asc
+```
 
 ---
 
