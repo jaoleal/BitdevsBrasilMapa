@@ -1,0 +1,74 @@
+name: Verificar assinaturas
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [master]
+    paths:
+      - "assinaturas/**/*.asc"
+      - "bitdevs.json"
+      - "assinantes.json"
+      - ".github/workflows/assinantes.yml"
+  push:
+    branches: [master]
+    paths:
+      - "assinaturas/**/*.asc"
+      - "bitdevs.json"
+      - "assinantes.json"
+      - ".github/workflows/assinantes.yml"
+
+jobs:
+  verificar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verificar assinaturas
+        run: |
+          failed=0
+          total=0
+
+          for asc in assinaturas/*/*.asc; do
+            [ -f "$asc" ] || continue
+            total=$((total + 1))
+
+            bitdev_id=$(basename "$(dirname "$asc")")
+            github_user=$(basename "$asc" .asc)
+
+            echo "--- Verificando: $asc (bitdev=$bitdev_id, user=$github_user) ---"
+
+            # Verificar que bitdev_id existe em bitdevs.json
+            entry=$(jq -e --arg id "$bitdev_id" '.[] | select(.id == $id)' bitdevs.json 2>/dev/null)
+            if [ -z "$entry" ]; then
+              echo "ERRO: bitdev_id '$bitdev_id' nao encontrado em bitdevs.json"
+              failed=$((failed + 1))
+              continue
+            fi
+
+            # Importar chave publica do GitHub
+            echo "Importando chave publica de https://github.com/$github_user.gpg"
+            if ! curl -sf "https://github.com/$github_user.gpg" | gpg --import 2>/dev/null; then
+              echo "ERRO: nao foi possivel importar a chave PGP de $github_user"
+              failed=$((failed + 1))
+              continue
+            fi
+
+            # Verificar assinatura contra o entry extraido
+            if echo "$entry" | gpg --verify "$asc" - 2>&1; then
+              echo "OK: assinatura valida"
+            else
+              echo "ERRO: assinatura invalida para $asc"
+              failed=$((failed + 1))
+            fi
+
+            echo ""
+          done
+
+          echo "=== Resultado: $((total - failed))/$total assinaturas validas ==="
+
+          if [ $failed -gt 0 ]; then
+            echo "FALHA: $failed assinatura(s) invalida(s)"
+            exit 1
+          fi
+
+          echo "Todas as assinaturas sao validas!"

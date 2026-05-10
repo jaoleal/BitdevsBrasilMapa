@@ -17,15 +17,21 @@
                 <h1>BitDevs<span>/br</span></h1>
                 <a
                     class="contribute-btn"
-                    href="https://github.com/SEU_ORG/bitdevs-br/blob/main/README.md"
+                    href="https://github.com/jaoleal/BitdevsBrasilMapa/blob/master/README.md#quero-adicionar-minha-cidade--corrigir-uma-data"
                     target="_blank"
                     >+ adicionar cidade</a
+                >
+                <a
+                    class="contribute-btn"
+                    href="https://github.com/jaoleal/BitdevsBrasilMapa/blob/master/README.md#como-se-tornar-assinante"
+                    target="_blank"
+                    >+ adicionar assinatura</a
                 >
             </div>
             <div class="subtitle">
                 mapa dos encontros · dados em
                 <a
-                    href="https://github.com/SEU_ORG/bitdevs-br/blob/main/bitdevs.json"
+                    href="https://github.com/jaoleal/BitdevsBrasilMapa/blob/master/bitdevs.json"
                     target="_blank"
                     >bitdevs.json</a
                 >
@@ -36,19 +42,14 @@
         <div id="legend"></div>
 
         <div id="controls">
-            <span class="ctrl-label">exibir:</span>
-            <div class="range-btns">
-                <button class="range-btn active" data-months="3">
-                    3 meses
-                </button>
-                <button class="range-btn" data-months="6">6 meses</button>
-                <button class="range-btn" data-months="12">12 meses</button>
-            </div>
+            <span class="ctrl-label">próximos bitdevs</span>
             <span id="conflict-badge">⚠ conflitos encontrados</span>
         </div>
 
         <div id="loading">carregando...</div>
         <div id="timeline" style="display: none"></div>
+
+        <div id="assinantes" style="display: none"></div>
 
         <footer>
             <span
@@ -134,6 +135,23 @@
 
                 const events = [];
                 for (const g of groups) {
+                    if (!g.regradata) {
+                        // data irregular — usa 1 de abril de cada ano no intervalo
+                        for (
+                            let y = start.getFullYear();
+                            y <= endDate.getFullYear();
+                            y++
+                        ) {
+                            const d = new Date(y, 3, 1); // abril = 3
+                            if (d >= start && d <= endDate)
+                                events.push({
+                                    group: g,
+                                    date: d,
+                                    irregular: true,
+                                });
+                        }
+                        continue;
+                    }
                     let cur = new Date(start);
                     while (cur <= endDate) {
                         const d = computeDate(
@@ -193,7 +211,8 @@
 
             let activeGroups = new Set();
             let allGroups = [];
-            let months = 3;
+            let allAssinantes = [];
+            let months = 2;
 
             function render(groups, eventsAll) {
                 const events = eventsAll.filter((e) =>
@@ -232,16 +251,33 @@
                             PALETTE.length;
                         const color = PALETTE[colorIdx];
 
+                        // Verificar se o evento está acontecendo agora
+                        let isLive = false;
+                        if (e.group.horario && !e.irregular) {
+                            const now = new Date();
+                            const [h, m] = e.group.horario
+                                .split(":")
+                                .map(Number);
+                            const start = new Date(e.date);
+                            start.setHours(h, m, 0, 0);
+                            const end = new Date(start);
+                            end.setHours(h + 2); // duração de 2h
+                            if (now >= start && now <= end) isLive = true;
+                        }
+
                         const row = document.createElement("div");
                         row.className =
-                            "event-row" + (e.conflict ? " conflict" : "");
+                            "event-row" +
+                            (e.conflict ? " conflict" : "") +
+                            (isLive ? " live" : "");
 
                         const dateEl = document.createElement("div");
                         dateEl.className = "event-date";
                         dateEl.innerHTML = `${fmtDate(e.date)} <span class="dow">${WEEKDAYS[e.date.getDay()]}</span>`;
 
                         const dot = document.createElement("div");
-                        dot.className = "event-dot";
+                        dot.className =
+                            "event-dot" + (isLive ? " live-dot" : "");
                         dot.style.background = color;
 
                         const info = document.createElement("div");
@@ -261,6 +297,8 @@
           ${e.group.horario ? `<span>${e.group.horario}</span>` : ""}
           ${e.group.notes ? `<span style="color:#444">${e.group.notes}</span>` : ""}
         </span>
+        ${isLive ? `<span class="live-badge">ao vivo</span>` : ""}
+        ${e.irregular ? `<span class="conflict-flag">? data irregular — consulte o site</span>` : ""}
         ${e.conflict ? `<span class="conflict-flag">⚡ conflito com ${cWith}</span>` : ""}
       `;
 
@@ -269,19 +307,196 @@
                         if (e.group.linktopicos) {
                             link.href = e.group.linktopicos;
                             link.target = "_blank";
-                            link.textContent = "↗";
+                            link.textContent = "tópicos";
                         }
+
+                        const icsBtn = document.createElement("a");
+                        icsBtn.className = "event-link";
+                        icsBtn.textContent = "agenda";
+                        icsBtn.href = "#";
+                        icsBtn.addEventListener("click", (ev) => {
+                            ev.preventDefault();
+                            const d = e.date;
+                            const pad = (n) => String(n).padStart(2, "0");
+                            const dtStart = `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}`;
+                            let dtStartFull = dtStart;
+                            let dtEndFull;
+                            if (e.group.horario) {
+                                const [h, m] = e.group.horario
+                                    .split(":")
+                                    .map(Number);
+                                dtStartFull = `${dtStart}T${pad(h)}${pad(m)}00`;
+                                dtEndFull = `${dtStart}T${pad(h + 2)}${pad(m)}00`;
+                            } else {
+                                dtStartFull = dtStart;
+                                dtEndFull = `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate() + 1)}`;
+                            }
+                            const ics = [
+                                "BEGIN:VCALENDAR",
+                                "VERSION:2.0",
+                                "PRODID:-//BitDevs Brasil//BR//PT",
+                                "BEGIN:VEVENT",
+                                e.group.horario
+                                    ? `DTSTART:${dtStartFull}`
+                                    : `DTSTART;VALUE=DATE:${dtStartFull}`,
+                                e.group.horario
+                                    ? `DTEND:${dtEndFull}`
+                                    : `DTEND;VALUE=DATE:${dtEndFull}`,
+                                `SUMMARY:${e.group.nome}`,
+                                `DESCRIPTION:${e.group.notes || ""}`,
+                                `LOCATION:${e.group.cidade} - ${e.group.estado}`,
+                                "END:VEVENT",
+                                "END:VCALENDAR",
+                            ].join("\r\n");
+                            const blob = new Blob([ics], {
+                                type: "text/calendar",
+                            });
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement("a");
+                            a.href = url;
+                            a.download = `${e.group.id}-${dtStart}.ics`;
+                            a.click();
+                            URL.revokeObjectURL(url);
+                        });
+
+                        const assBtn = document.createElement("a");
+                        assBtn.className = "event-link";
+                        assBtn.textContent = "assinantes";
+                        assBtn.href = "#";
+                        assBtn.addEventListener("click", (ev) => {
+                            ev.preventDefault();
+                            filterAssinantes(e.group.id);
+                            document
+                                .getElementById("assinantes")
+                                .scrollIntoView({ behavior: "smooth" });
+                        });
+
+                        const btns = document.createElement("div");
+                        btns.className = "event-btns";
+                        if (e.group.linktopicos) btns.appendChild(link);
+                        btns.appendChild(icsBtn);
+                        btns.appendChild(assBtn);
 
                         row.appendChild(dateEl);
                         row.appendChild(dot);
                         row.appendChild(info);
-                        if (e.group.linktopicos) row.appendChild(link);
+                        row.appendChild(btns);
 
                         div.appendChild(row);
                     }
 
                     timeline.appendChild(div);
                 }
+            }
+
+            function filterAssinantes(bitdevId) {
+                const filtered = allAssinantes.filter(
+                    (a) => a.bitdevs_ids && a.bitdevs_ids.includes(bitdevId),
+                );
+                const group = allGroups.find((g) => g.id === bitdevId);
+                const label = group ? group.cidade : bitdevId;
+                renderAssinantes(filtered, label);
+            }
+
+            function renderAssinantes(assinantes, filterLabel) {
+                const container = document.getElementById("assinantes");
+                if (!assinantes.length && !filterLabel) return;
+
+                container.style.display = "block";
+                container.innerHTML = "";
+                container.classList.remove("expanded");
+
+                const header = document.createElement("div");
+                header.className = "assinantes-header";
+                if (filterLabel) {
+                    header.innerHTML = `Assinantes <span class="assinantes-desc">filtrando por ${filterLabel}</span>`;
+                    const clearBtn = document.createElement("button");
+                    clearBtn.className = "assinantes-filter-clear";
+                    clearBtn.textContent = "limpar filtro";
+                    clearBtn.addEventListener("click", () => {
+                        renderAssinantes(allAssinantes);
+                    });
+                    header.appendChild(clearBtn);
+                } else {
+                    header.innerHTML = `Assinantes <span class="assinantes-desc">Pessoas que assinaram e confirmam que as datas dos BitDevs estão corretas</span>`;
+                }
+                container.appendChild(header);
+
+                if (!assinantes.length) {
+                    const empty = document.createElement("div");
+                    empty.style.cssText =
+                        "padding:24px 40px;color:var(--muted)";
+                    empty.textContent = "nenhum assinante para este BitDev.";
+                    container.appendChild(empty);
+                    return;
+                }
+
+                const track = document.createElement("div");
+                track.className = "assinantes-track";
+
+                function addCard(a) {
+                    const card = document.createElement("div");
+                    card.className = "assinante-card";
+                    const fp = a.chave_pgp || "—";
+                    card.innerHTML = `
+                        <img class="assinante-avatar" src="https://github.com/${a.nome}.png" alt="${a.nome}" loading="lazy" />
+                        <div class="assinante-info">
+                            <a class="assinante-user" href="https://github.com/${a.nome}" target="_blank">${a.nome}</a>
+                            <span class="assinante-fp">${fp}</span>
+                        </div>
+                    `;
+                    track.appendChild(card);
+                }
+
+                // Preencher pelo menos 2x a largura da tela para loop seamless
+                const screenWidth = window.innerWidth;
+                let filled = 0;
+                while (filled < screenWidth * 2) {
+                    for (const a of assinantes) {
+                        addCard(a);
+                    }
+                    container.appendChild(track);
+                    filled = track.scrollWidth;
+                }
+                // Duplicar tudo para o loop infinito
+                const halfCount = track.children.length;
+                for (let i = 0; i < halfCount; i++) {
+                    track.appendChild(track.children[i].cloneNode(true));
+                }
+
+                container.appendChild(track);
+
+                const speed = 5;
+                const halfWidth = track.scrollWidth / 2;
+                const duration = halfWidth / speed;
+                track.style.animationDuration = `${duration}s`;
+
+                // Lista expandida
+                const list = document.createElement("div");
+                list.className = "assinantes-list";
+                for (const a of assinantes) {
+                    const row = document.createElement("div");
+                    row.className = "assinante-list-row";
+                    const fp = a.chave_pgp || "—";
+                    row.innerHTML = `
+                        <img class="assinante-avatar" src="https://github.com/${a.nome}.png" alt="${a.nome}" loading="lazy" />
+                        <div class="assinante-info">
+                            <a class="assinante-user" href="https://github.com/${a.nome}" target="_blank">${a.nome}</a>
+                            <span class="assinante-fp">${fp}</span>
+                        </div>
+                    `;
+                    list.appendChild(row);
+                }
+                container.appendChild(list);
+
+                const toggleBtn = document.createElement("button");
+                toggleBtn.className = "assinantes-toggle";
+                toggleBtn.textContent = "ver todos";
+                toggleBtn.addEventListener("click", () => {
+                    const expanded = container.classList.toggle("expanded");
+                    toggleBtn.textContent = expanded ? "recolher" : "ver todos";
+                });
+                container.appendChild(toggleBtn);
             }
 
             async function init() {
@@ -303,41 +518,43 @@
                 loading.style.display = "none";
                 timeline.style.display = "block";
 
-                const legend = document.getElementById("legend");
-                groups.forEach((g, i) => {
-                    const color = PALETTE[i % PALETTE.length];
-                    const item = document.createElement("div");
-                    item.className = "legend-item";
-                    item.dataset.id = g.id;
-                    item.innerHTML = `<div class="legend-dot" style="background:${color}"></div>${g.cidade}`;
-                    item.addEventListener("click", () => {
-                        if (activeGroups.has(g.id)) {
-                            activeGroups.delete(g.id);
+                function renderLegend(events) {
+                    const legend = document.getElementById("legend");
+                    legend.innerHTML = "";
+                    const activeIds = new Set(events.map((e) => e.group.id));
+                    groups.forEach((g, i) => {
+                        if (!activeIds.has(g.id)) return;
+                        const color = PALETTE[i % PALETTE.length];
+                        const item = document.createElement("div");
+                        item.className = "legend-item";
+                        item.dataset.id = g.id;
+                        if (!activeGroups.has(g.id))
                             item.classList.add("inactive");
-                        } else {
-                            activeGroups.add(g.id);
-                            item.classList.remove("inactive");
-                        }
-                        const evts = generateEvents(allGroups, months);
-                        render(allGroups, evts);
+                        item.innerHTML = `<div class="legend-dot" style="background:${color}"></div>${g.cidade}`;
+                        item.addEventListener("click", () => {
+                            if (activeGroups.has(g.id)) {
+                                activeGroups.delete(g.id);
+                                item.classList.add("inactive");
+                            } else {
+                                activeGroups.add(g.id);
+                                item.classList.remove("inactive");
+                            }
+                            const evts = generateEvents(allGroups, months);
+                            render(allGroups, evts);
+                        });
+                        legend.appendChild(item);
                     });
-                    legend.appendChild(item);
-                });
-
-                document.querySelectorAll(".range-btn").forEach((btn) => {
-                    btn.addEventListener("click", () => {
-                        document
-                            .querySelectorAll(".range-btn")
-                            .forEach((b) => b.classList.remove("active"));
-                        btn.classList.add("active");
-                        months = parseInt(btn.dataset.months);
-                        const evts = generateEvents(allGroups, months);
-                        render(allGroups, evts);
-                    });
-                });
+                }
 
                 const evts = generateEvents(allGroups, months);
+                renderLegend(evts);
                 render(allGroups, evts);
+
+                try {
+                    const assinanteRes = await fetch("assinantes.json");
+                    allAssinantes = await assinanteRes.json();
+                    renderAssinantes(allAssinantes);
+                } catch (e) {}
             }
 
             init();
