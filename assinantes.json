@@ -1,1 +1,16 @@
-[]
+[
+  {
+    "bitdev_id": "bh",
+    "github_user": "jaoleal",
+    "avatar": "https://github.com/jaoleal.png",
+    "github": "https://github.com/jaoleal",
+    "pgp_fingerprint": "851C2EF386C0A2E4"
+  },
+  {
+    "bitdev_id": "sp",
+    "github_user": "jaoleal",
+    "avatar": "https://github.com/jaoleal.png",
+    "github": "https://github.com/jaoleal",
+    "pgp_fingerprint": "851C2EF386C0A2E4"
+  }
+]
