@@ -1,58 +1,65 @@
-name: Gerar assinantes.json
+name: Verificar assinaturas
 
 on:
   pull_request:
     branches: [master]
-    paths: ["assinaturas/**/*.asc", "assinantes.json"]
+    paths: ["assinaturas/**/*.asc", "bitdevs.json"]
   push:
     branches: [master]
-    paths: ["assinaturas/**/*.asc", "assinantes.json"]
+    paths: ["assinaturas/**/*.asc", "bitdevs.json"]
 
 jobs:
-  gerar:
+  verificar:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     steps:
-      - uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
+      - uses: actions/checkout@v4
 
-      - name: Gerar assinantes.json
+      - name: Verificar assinaturas
         run: |
-          echo '[' > assinantes_tmp.json
-          first=true
+          failed=0
+          total=0
+
           for asc in assinaturas/*/*.asc; do
             [ -f "$asc" ] || continue
-            # assinaturas/<bitdev_id>/<github_user>.asc
+            total=$((total + 1))
+
             bitdev_id=$(basename "$(dirname "$asc")")
             github_user=$(basename "$asc" .asc)
 
-            # fingerprint da chave que assinou
-            fp=$(gpg --list-packets "$asc" 2>/dev/null \
-              | grep -oP 'keyid \K[A-F0-9]+' | head -1)
+            echo "--- Verificando: $asc (bitdev=$bitdev_id, user=$github_user) ---"
 
-            if [ "$first" = true ]; then first=false; else echo ',' >> assinantes_tmp.json; fi
-            cat >> assinantes_tmp.json <<EOF
-          {
-            "bitdev_id": "$bitdev_id",
-            "github_user": "$github_user",
-            "avatar": "https://github.com/$github_user.png",
-            "github": "https://github.com/$github_user",
-            "pgp_fingerprint": "$fp"
-          }
-          EOF
+            # Verificar que bitdev_id existe em bitdevs.json
+            entry=$(jq -e --arg id "$bitdev_id" '.[] | select(.id == $id)' bitdevs.json 2>/dev/null)
+            if [ -z "$entry" ]; then
+              echo "ERRO: bitdev_id '$bitdev_id' nao encontrado em bitdevs.json"
+              failed=$((failed + 1))
+              continue
+            fi
+
+            # Importar chave publica do GitHub
+            echo "Importando chave publica de https://github.com/$github_user.gpg"
+            if ! curl -sf "https://github.com/$github_user.gpg" | gpg --import 2>/dev/null; then
+              echo "ERRO: nao foi possivel importar a chave PGP de $github_user"
+              failed=$((failed + 1))
+              continue
+            fi
+
+            # Verificar assinatura contra o entry extraido
+            if echo "$entry" | gpg --verify "$asc" - 2>&1; then
+              echo "OK: assinatura valida"
+            else
+              echo "ERRO: assinatura invalida para $asc"
+              failed=$((failed + 1))
+            fi
+
+            echo ""
           done
-          echo ']' >> assinantes_tmp.json
 
-          jq '.' assinantes_tmp.json > assinantes.json
-          rm -f assinantes_tmp.json
+          echo "=== Resultado: $((total - failed))/$total assinaturas validas ==="
 
-      - name: Commit assinantes.json
-        if: github.event_name == 'push'
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add assinantes.json
-          git diff --cached --quiet || git commit -m "assinantes.json: atualizar"
-          git push
+          if [ $failed -gt 0 ]; then
+            echo "FALHA: $failed assinatura(s) invalida(s)"
+            exit 1
+          fi
+
+          echo "Todas as assinaturas sao validas!"
