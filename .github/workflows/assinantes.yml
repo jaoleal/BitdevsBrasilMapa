@@ -1,12 +1,21 @@
 name: Verificar assinaturas
 
 on:
+  workflow_dispatch:
   pull_request:
     branches: [master]
-    paths: ["assinaturas/**/*.asc", "bitdevs.json"]
+    paths:
+      - "assinaturas/**/*.asc"
+      - "bitdevs.json"
+      - "assinantes.json"
+      - ".github/workflows/assinantes.yml"
   push:
     branches: [master]
-    paths: ["assinaturas/**/*.asc", "bitdevs.json"]
+    paths:
+      - "assinaturas/**/*.asc"
+      - "bitdevs.json"
+      - "assinantes.json"
+      - ".github/workflows/assinantes.yml"
 
 jobs:
   verificar:
