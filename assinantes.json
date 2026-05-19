@@ -3,5 +3,10 @@
     "nome": "jaoleal",
     "chave_pgp": "79F498EF30E0E2F32AC99AD4851C2EF386C0A2E4",
     "bitdevs_ids": ["sp", "bh"]
+  },
+  {
+    "nome": "bitcoisas",
+    "chave_pgp": "86E85B0B0B01321B39D4EDEA9928B08823EA6346",
+    "bitdevs_ids": ["sp"]
   }
 ]
