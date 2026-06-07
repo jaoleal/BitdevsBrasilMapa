@@ -8,6 +8,7 @@ on:
       - "assinaturas/**/*.asc"
       - "bitdevs.json"
       - "assinantes.json"
+      - "chaves/**/*.asc"
       - ".github/workflows/assinantes.yml"
   push:
     branches: [master]
@@ -15,6 +16,7 @@ on:
       - "assinaturas/**/*.asc"
       - "bitdevs.json"
       - "assinantes.json"
+      - "chaves/**/*.asc"
       - ".github/workflows/assinantes.yml"
 
 jobs:
@@ -45,12 +47,31 @@ jobs:
               continue
             fi
 
-            # Importar chave publica do GitHub
-            echo "Importando chave publica de https://github.com/$github_user.gpg"
-            if ! curl -sf "https://github.com/$github_user.gpg" | gpg --import 2>/dev/null; then
-              echo "ERRO: nao foi possivel importar a chave PGP de $github_user"
-              failed=$((failed + 1))
-              continue
+            # Importar chave: preferir local, fallback GitHub
+            key_file="chaves/${github_user}.asc"
+            if [ -f "$key_file" ]; then
+              echo "Importando chave local de $key_file"
+              gpg --import "$key_file" 2>/dev/null
+            else
+              echo "Chave local nao encontrada, buscando de https://github.com/$github_user.gpg"
+              if ! curl -sf "https://github.com/$github_user.gpg" | gpg --import 2>/dev/null; then
+                echo "ERRO: nao foi possivel importar a chave PGP de $github_user"
+                failed=$((failed + 1))
+                continue
+              fi
+            fi
+
+            # Validar fingerprint contra assinantes.json (quando chave local existe)
+            if [ -f "$key_file" ]; then
+              expected_fp=$(jq -r --arg nome "$github_user" \
+                '.[] | select(.nome == $nome) | .chave_pgp' assinantes.json)
+              imported_fp=$(gpg --with-colons --import-options show-only --import "$key_file" 2>/dev/null \
+                | awk -F: '/^fpr:/{print $10; exit}')
+              if [ -n "$expected_fp" ] && [ -n "$imported_fp" ] && [ "$expected_fp" != "$imported_fp" ]; then
+                echo "ERRO: fingerprint da chave ($imported_fp) nao bate com assinantes.json ($expected_fp)"
+                failed=$((failed + 1))
+                continue
+              fi
             fi
 
             # Verificar assinatura contra o entry extraido
