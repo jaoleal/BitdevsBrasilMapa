@@ -1,296 +1,277 @@
 <!doctype html>
 <html lang="pt-BR">
-    <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>BitDevs Brasil — Agenda</title>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link
-            href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600;700&family=Fragment+Mono&display=swap"
-            rel="stylesheet"
-        />
-        <link rel="stylesheet" href="style.css" />
-    </head>
-    <body>
-        <header>
-            <div class="header-top">
-                <h1>BitDevs<span>/br</span></h1>
-                <a
-                    class="contribute-btn"
-                    href="https://github.com/jaoleal/BitdevsBrasilMapa/blob/master/README.md#quero-adicionar-minha-cidade--corrigir-uma-data"
-                    target="_blank"
-                    >+ adicionar cidade</a
-                >
-                <a
-                    class="contribute-btn"
-                    href="https://github.com/jaoleal/BitdevsBrasilMapa/blob/master/README.md#como-se-tornar-assinante"
-                    target="_blank"
-                    >+ adicionar assinatura</a
-                >
-            </div>
-            <div class="subtitle">
-                mapa dos encontros · dados em
-                <a
-                    href="https://github.com/jaoleal/BitdevsBrasilMapa/blob/master/bitdevs.json"
-                    target="_blank"
-                    >bitdevs.json</a
-                >
-                · abra um PR para adicionar ou corrigir
-            </div>
-        </header>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>BitDevs Brasil — Agenda</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600;700&family=Fragment+Mono&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header>
+      <div class="header-top">
+        <h1>BitDevs<span>/br</span></h1>
+        <a
+          class="contribute-btn"
+          href="https://github.com/jaoleal/BitdevsBrasilMapa/blob/master/README.md#quero-adicionar-minha-cidade--corrigir-uma-data"
+          target="_blank"
+          >+ adicionar cidade</a
+        >
+        <a
+          class="contribute-btn"
+          href="https://github.com/jaoleal/BitdevsBrasilMapa/blob/master/README.md#como-se-tornar-assinante"
+          target="_blank"
+          >+ adicionar assinatura</a
+        >
+      </div>
+      <div class="subtitle">
+        mapa dos encontros · dados em
+        <a
+          href="https://github.com/jaoleal/BitdevsBrasilMapa/blob/master/bitdevs.json"
+          target="_blank"
+          >bitdevs.json</a
+        >
+        · abra um PR para adicionar ou corrigir
+      </div>
+    </header>
 
-        <div id="legend"></div>
+    <div id="legend"></div>
 
-        <div id="controls">
-            <span class="ctrl-label">próximos bitdevs</span>
-            <span id="conflict-badge">⚠ conflitos encontrados</span>
-        </div>
+    <div id="controls">
+      <span class="ctrl-label">próximos bitdevs</span>
+      <span id="conflict-badge">⚠ conflitos encontrados</span>
+    </div>
 
-        <div id="loading">carregando...</div>
-        <div id="timeline" style="display: none"></div>
+    <div id="loading">carregando...</div>
+    <div id="timeline" style="display: none"></div>
 
-        <div id="assinantes" style="display: none"></div>
+    <div id="assinantes" style="display: none"></div>
 
-        <footer>
-            <span
-                >dados: <a href="bitdevs.json">bitdevs.json</a> — edite via
-                PR</span
-            >
-            <span
-                >BitDevs é um encontro de estudo de Bitcoin inspirado no
-                <a href="https://bitdevs.org" target="_blank"
-                    >NYC BitDevs</a
-                ></span
-            >
-        </footer>
+    <footer>
+      <span>dados: <a href="bitdevs.json">bitdevs.json</a> — edite via PR</span>
+      <span
+        >BitDevs é um encontro de estudo de Bitcoin inspirado no
+        <a href="https://bitdevs.org" target="_blank">NYC BitDevs</a></span
+      >
+    </footer>
 
-        <script>
-            const PALETTE = [
-                "#f7931a",
-                "#4ade80",
-                "#60a5fa",
-                "#f472b6",
-                "#a78bfa",
-                "#fb923c",
-                "#34d399",
-                "#e879f9",
-                "#facc15",
-                "#38bdf8",
-            ];
+    <script>
+      const PALETTE = [
+        "#f7931a",
+        "#4ade80",
+        "#60a5fa",
+        "#f472b6",
+        "#a78bfa",
+        "#fb923c",
+        "#34d399",
+        "#e879f9",
+        "#facc15",
+        "#38bdf8",
+      ];
 
-            const WEEKDAYS = ["dom", "seg", "ter", "qua", "qui", "sex", "sáb"];
-            const WEEKDAYS_FULL = [
-                "domingo",
-                "segunda",
-                "terça",
-                "quarta",
-                "quinta",
-                "sexta",
-                "sábado",
-            ];
-            const MONTHS_PT = [
-                "Janeiro",
-                "Fevereiro",
-                "Março",
-                "Abril",
-                "Maio",
-                "Junho",
-                "Julho",
-                "Agosto",
-                "Setembro",
-                "Outubro",
-                "Novembro",
-                "Dezembro",
-            ];
+      const WEEKDAYS = ["dom", "seg", "ter", "qua", "qui", "sex", "sáb"];
+      const WEEKDAYS_FULL = [
+        "domingo",
+        "segunda",
+        "terça",
+        "quarta",
+        "quinta",
+        "sexta",
+        "sábado",
+      ];
+      const MONTHS_PT = [
+        "Janeiro",
+        "Fevereiro",
+        "Março",
+        "Abril",
+        "Maio",
+        "Junho",
+        "Julho",
+        "Agosto",
+        "Setembro",
+        "Outubro",
+        "Novembro",
+        "Dezembro",
+      ];
 
-            // semana: 1=primeiro, 2=segundo, -1=último, -2=penúltimo
-            // dia: 0=dom ... 6=sáb (igual ao JS Date.getDay())
-            function computeDate(year, month, regradata) {
-                const { semana, dia } = regradata;
-                if (semana > 0) {
-                    const first = new Date(year, month, 1);
-                    const diff = (dia - first.getDay() + 7) % 7;
-                    const day = 1 + diff + (semana - 1) * 7;
-                    const d = new Date(year, month, day);
-                    if (d.getMonth() !== month) return null;
-                    return d;
-                } else {
-                    const last = new Date(year, month + 1, 0);
-                    const diff = (last.getDay() - dia + 7) % 7;
-                    const day = last.getDate() - diff + (semana + 1) * 7;
-                    const d = new Date(year, month, day);
-                    if (d.getMonth() !== month) return null;
-                    return d;
-                }
+      // semana: 1=primeiro, 2=segundo, -1=último, -2=penúltimo
+      // dia: 0=dom ... 6=sáb (igual ao JS Date.getDay())
+      function computeDate(year, month, regradata) {
+        const { semana, dia } = regradata;
+        if (semana > 0) {
+          const first = new Date(year, month, 1);
+          const diff = (dia - first.getDay() + 7) % 7;
+          const day = 1 + diff + (semana - 1) * 7;
+          const d = new Date(year, month, day);
+          if (d.getMonth() !== month) return null;
+          return d;
+        } else {
+          const last = new Date(year, month + 1, 0);
+          const diff = (last.getDay() - dia + 7) % 7;
+          const day = last.getDate() - diff + (semana + 1) * 7;
+          const d = new Date(year, month, day);
+          if (d.getMonth() !== month) return null;
+          return d;
+        }
+      }
+
+      function generateEvents(groups, months) {
+        const now = new Date();
+        const start = new Date(now.getFullYear(), now.getMonth(), 1);
+        const endDate = new Date(now.getFullYear(), now.getMonth() + months, 0);
+
+        const events = [];
+        for (const g of groups) {
+          if (!g.regradata) {
+            // data irregular — usa 1 de abril de cada ano no intervalo
+            for (let y = start.getFullYear(); y <= endDate.getFullYear(); y++) {
+              const d = new Date(y, 3, 1); // abril = 3
+              if (d >= start && d <= endDate)
+                events.push({
+                  group: g,
+                  date: d,
+                  irregular: true,
+                });
+            }
+            continue;
+          }
+          let cur = new Date(start);
+          while (cur <= endDate) {
+            const d = computeDate(
+              cur.getFullYear(),
+              cur.getMonth(),
+              g.regradata,
+            );
+            if (d) events.push({ group: g, date: d });
+            cur.setMonth(cur.getMonth() + 1);
+          }
+        }
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        return events
+          .filter((e) => e.date >= today)
+          .sort((a, b) => a.date - b.date);
+      }
+
+      function markConflicts(events) {
+        const byDate = {};
+        for (const e of events) {
+          const key = e.date.toISOString().slice(0, 10);
+          byDate[key] = byDate[key] || [];
+          byDate[key].push(e);
+        }
+        for (const evs of Object.values(byDate)) {
+          if (evs.length > 1)
+            evs.forEach((e) => {
+              e.conflict = true;
+              e.conflictWith = evs;
+            });
+        }
+        return events;
+      }
+
+      function groupByMonth(events) {
+        const map = new Map();
+        for (const e of events) {
+          const key = `${e.date.getFullYear()}-${e.date.getMonth()}`;
+          if (!map.has(key))
+            map.set(key, {
+              year: e.date.getFullYear(),
+              month: e.date.getMonth(),
+              events: [],
+            });
+          map.get(key).events.push(e);
+        }
+        return [...map.values()];
+      }
+
+      function fmtDate(d) {
+        const day = String(d.getDate()).padStart(2, "0");
+        const mon = String(d.getMonth() + 1).padStart(2, "0");
+        return `${day}/${mon}`;
+      }
+
+      let activeGroups = new Set();
+      let allGroups = [];
+      let allAssinantes = [];
+      let months = 2;
+
+      function render(groups, eventsAll) {
+        const events = eventsAll.filter((e) => activeGroups.has(e.group.id));
+        markConflicts(events);
+
+        const hasConflict = events.some((e) => e.conflict);
+        const badge = document.getElementById("conflict-badge");
+        badge.classList.toggle("visible", hasConflict);
+
+        const timeline = document.getElementById("timeline");
+        timeline.innerHTML = "";
+
+        if (!events.length) {
+          timeline.innerHTML =
+            '<div style="padding:40px;color:var(--muted)">nenhum evento no período.</div>';
+          return;
+        }
+
+        const byMonth = groupByMonth(events);
+
+        for (const { year, month, events: mes } of byMonth) {
+          const conflicts = mes.filter((e) => e.conflict).length;
+          const div = document.createElement("div");
+          div.className = "month-block";
+
+          const header = document.createElement("div");
+          header.className = "month-header";
+          header.innerHTML = `<span>${MONTHS_PT[month]} ${year}</span>${conflicts ? `<span class="month-conflict-count">⚠ ${conflicts} conflito${conflicts > 1 ? "s" : ""}</span>` : ""}`;
+          div.appendChild(header);
+
+          for (const e of mes) {
+            const colorIdx =
+              allGroups.findIndex((g) => g.id === e.group.id) % PALETTE.length;
+            const color = PALETTE[colorIdx];
+
+            // Verificar se o evento está acontecendo agora
+            let isLive = false;
+            if (e.group.horario && !e.irregular) {
+              const now = new Date();
+              const [h, m] = e.group.horario.split(":").map(Number);
+              const start = new Date(e.date);
+              start.setHours(h, m, 0, 0);
+              const end = new Date(start);
+              end.setHours(h + 2); // duração de 2h
+              if (now >= start && now <= end) isLive = true;
             }
 
-            function generateEvents(groups, months) {
-                const now = new Date();
-                const start = new Date(now.getFullYear(), now.getMonth(), 1);
-                const endDate = new Date(
-                    now.getFullYear(),
-                    now.getMonth() + months,
-                    0,
-                );
+            const row = document.createElement("div");
+            row.className =
+              "event-row" +
+              (e.conflict ? " conflict" : "") +
+              (isLive ? " live" : "");
 
-                const events = [];
-                for (const g of groups) {
-                    if (!g.regradata) {
-                        // data irregular — usa 1 de abril de cada ano no intervalo
-                        for (
-                            let y = start.getFullYear();
-                            y <= endDate.getFullYear();
-                            y++
-                        ) {
-                            const d = new Date(y, 3, 1); // abril = 3
-                            if (d >= start && d <= endDate)
-                                events.push({
-                                    group: g,
-                                    date: d,
-                                    irregular: true,
-                                });
-                        }
-                        continue;
-                    }
-                    let cur = new Date(start);
-                    while (cur <= endDate) {
-                        const d = computeDate(
-                            cur.getFullYear(),
-                            cur.getMonth(),
-                            g.regradata,
-                        );
-                        if (d) events.push({ group: g, date: d });
-                        cur.setMonth(cur.getMonth() + 1);
-                    }
-                }
+            const dateEl = document.createElement("div");
+            dateEl.className = "event-date";
+            dateEl.innerHTML = `${fmtDate(e.date)} <span class="dow">${WEEKDAYS[e.date.getDay()]}</span>`;
 
-                const today = new Date();
-                today.setHours(0, 0, 0, 0);
-                return events
-                    .filter((e) => e.date >= today)
-                    .sort((a, b) => a.date - b.date);
-            }
+            const dot = document.createElement("div");
+            dot.className = "event-dot" + (isLive ? " live-dot" : "");
+            dot.style.background = color;
 
-            function markConflicts(events) {
-                const byDate = {};
-                for (const e of events) {
-                    const key = e.date.toISOString().slice(0, 10);
-                    byDate[key] = byDate[key] || [];
-                    byDate[key].push(e);
-                }
-                for (const evs of Object.values(byDate)) {
-                    if (evs.length > 1)
-                        evs.forEach((e) => {
-                            e.conflict = true;
-                            e.conflictWith = evs;
-                        });
-                }
-                return events;
-            }
+            const info = document.createElement("div");
+            info.className = "event-info";
 
-            function groupByMonth(events) {
-                const map = new Map();
-                for (const e of events) {
-                    const key = `${e.date.getFullYear()}-${e.date.getMonth()}`;
-                    if (!map.has(key))
-                        map.set(key, {
-                            year: e.date.getFullYear(),
-                            month: e.date.getMonth(),
-                            events: [],
-                        });
-                    map.get(key).events.push(e);
-                }
-                return [...map.values()];
-            }
+            const cWith = e.conflict
+              ? e.conflictWith
+                  .filter((x) => x.group.id !== e.group.id)
+                  .map((x) => x.group.cidade)
+                  .join(", ")
+              : "";
 
-            function fmtDate(d) {
-                const day = String(d.getDate()).padStart(2, "0");
-                const mon = String(d.getMonth() + 1).padStart(2, "0");
-                return `${day}/${mon}`;
-            }
-
-            let activeGroups = new Set();
-            let allGroups = [];
-            let allAssinantes = [];
-            let months = 2;
-
-            function render(groups, eventsAll) {
-                const events = eventsAll.filter((e) =>
-                    activeGroups.has(e.group.id),
-                );
-                markConflicts(events);
-
-                const hasConflict = events.some((e) => e.conflict);
-                const badge = document.getElementById("conflict-badge");
-                badge.classList.toggle("visible", hasConflict);
-
-                const timeline = document.getElementById("timeline");
-                timeline.innerHTML = "";
-
-                if (!events.length) {
-                    timeline.innerHTML =
-                        '<div style="padding:40px;color:var(--muted)">nenhum evento no período.</div>';
-                    return;
-                }
-
-                const byMonth = groupByMonth(events);
-
-                for (const { year, month, events: mes } of byMonth) {
-                    const conflicts = mes.filter((e) => e.conflict).length;
-                    const div = document.createElement("div");
-                    div.className = "month-block";
-
-                    const header = document.createElement("div");
-                    header.className = "month-header";
-                    header.innerHTML = `<span>${MONTHS_PT[month]} ${year}</span>${conflicts ? `<span class="month-conflict-count">⚠ ${conflicts} conflito${conflicts > 1 ? "s" : ""}</span>` : ""}`;
-                    div.appendChild(header);
-
-                    for (const e of mes) {
-                        const colorIdx =
-                            allGroups.findIndex((g) => g.id === e.group.id) %
-                            PALETTE.length;
-                        const color = PALETTE[colorIdx];
-
-                        // Verificar se o evento está acontecendo agora
-                        let isLive = false;
-                        if (e.group.horario && !e.irregular) {
-                            const now = new Date();
-                            const [h, m] = e.group.horario
-                                .split(":")
-                                .map(Number);
-                            const start = new Date(e.date);
-                            start.setHours(h, m, 0, 0);
-                            const end = new Date(start);
-                            end.setHours(h + 2); // duração de 2h
-                            if (now >= start && now <= end) isLive = true;
-                        }
-
-                        const row = document.createElement("div");
-                        row.className =
-                            "event-row" +
-                            (e.conflict ? " conflict" : "") +
-                            (isLive ? " live" : "");
-
-                        const dateEl = document.createElement("div");
-                        dateEl.className = "event-date";
-                        dateEl.innerHTML = `${fmtDate(e.date)} <span class="dow">${WEEKDAYS[e.date.getDay()]}</span>`;
-
-                        const dot = document.createElement("div");
-                        dot.className =
-                            "event-dot" + (isLive ? " live-dot" : "");
-                        dot.style.background = color;
-
-                        const info = document.createElement("div");
-                        info.className = "event-info";
-
-                        const cWith = e.conflict
-                            ? e.conflictWith
-                                  .filter((x) => x.group.id !== e.group.id)
-                                  .map((x) => x.group.cidade)
-                                  .join(", ")
-                            : "";
-
-                        info.innerHTML = `
+            info.innerHTML = `
         <span class="event-name" style="color:${color}">${e.group.nome}</span>
         <span class="event-meta">
           <span>${e.group.cidade} — ${e.group.estado}</span>
@@ -302,262 +283,258 @@
         ${e.conflict ? `<span class="conflict-flag">⚡ conflito com ${cWith}</span>` : ""}
       `;
 
-                        const link = document.createElement("a");
-                        link.className = "event-link";
-                        if (e.group.linktopicos) {
-                            link.href = e.group.linktopicos;
-                            link.target = "_blank";
-                            link.textContent = "tópicos";
-                        }
-
-                        const icsBtn = document.createElement("a");
-                        icsBtn.className = "event-link";
-                        icsBtn.textContent = "agenda";
-                        icsBtn.href = "#";
-                        icsBtn.addEventListener("click", (ev) => {
-                            ev.preventDefault();
-                            const d = e.date;
-                            const pad = (n) => String(n).padStart(2, "0");
-                            const dtStart = `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}`;
-                            let dtStartFull = dtStart;
-                            let dtEndFull;
-                            if (e.group.horario) {
-                                const [h, m] = e.group.horario
-                                    .split(":")
-                                    .map(Number);
-                                dtStartFull = `${dtStart}T${pad(h)}${pad(m)}00`;
-                                dtEndFull = `${dtStart}T${pad(h + 2)}${pad(m)}00`;
-                            } else {
-                                dtStartFull = dtStart;
-                                dtEndFull = `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate() + 1)}`;
-                            }
-                            const ics = [
-                                "BEGIN:VCALENDAR",
-                                "VERSION:2.0",
-                                "PRODID:-//BitDevs Brasil//BR//PT",
-                                "BEGIN:VEVENT",
-                                e.group.horario
-                                    ? `DTSTART:${dtStartFull}`
-                                    : `DTSTART;VALUE=DATE:${dtStartFull}`,
-                                e.group.horario
-                                    ? `DTEND:${dtEndFull}`
-                                    : `DTEND;VALUE=DATE:${dtEndFull}`,
-                                `SUMMARY:${e.group.nome}`,
-                                `DESCRIPTION:${e.group.notes || ""}`,
-                                `LOCATION:${e.group.cidade} - ${e.group.estado}`,
-                                "END:VEVENT",
-                                "END:VCALENDAR",
-                            ].join("\r\n");
-                            const blob = new Blob([ics], {
-                                type: "text/calendar",
-                            });
-                            const url = URL.createObjectURL(blob);
-                            const a = document.createElement("a");
-                            a.href = url;
-                            a.download = `${e.group.id}-${dtStart}.ics`;
-                            a.click();
-                            URL.revokeObjectURL(url);
-                        });
-
-                        const assBtn = document.createElement("a");
-                        assBtn.className = "event-link";
-                        assBtn.textContent = "assinantes";
-                        assBtn.href = "#";
-                        assBtn.addEventListener("click", (ev) => {
-                            ev.preventDefault();
-                            filterAssinantes(e.group.id);
-                            document
-                                .getElementById("assinantes")
-                                .scrollIntoView({ behavior: "smooth" });
-                        });
-
-                        const btns = document.createElement("div");
-                        btns.className = "event-btns";
-                        if (e.group.linktopicos) btns.appendChild(link);
-                        btns.appendChild(icsBtn);
-                        btns.appendChild(assBtn);
-
-                        row.appendChild(dateEl);
-                        row.appendChild(dot);
-                        row.appendChild(info);
-                        row.appendChild(btns);
-
-                        div.appendChild(row);
-                    }
-
-                    timeline.appendChild(div);
-                }
+            const link = document.createElement("a");
+            link.className = "event-link";
+            if (e.group.linktopicos) {
+              link.href = e.group.linktopicos;
+              link.target = "_blank";
+              link.textContent = "tópicos";
             }
 
-            function filterAssinantes(bitdevId) {
-                const filtered = allAssinantes.filter(
-                    (a) => a.bitdevs_ids && a.bitdevs_ids.includes(bitdevId),
-                );
-                const group = allGroups.find((g) => g.id === bitdevId);
-                const label = group ? group.cidade : bitdevId;
-                renderAssinantes(filtered, label);
-            }
+            const icsBtn = document.createElement("a");
+            icsBtn.className = "event-link";
+            icsBtn.textContent = "agenda";
+            icsBtn.href = "#";
+            icsBtn.addEventListener("click", (ev) => {
+              ev.preventDefault();
+              const d = e.date;
+              const pad = (n) => String(n).padStart(2, "0");
+              const dtStart = `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}`;
+              let dtStartFull = dtStart;
+              let dtEndFull;
+              if (e.group.horario) {
+                const [h, m] = e.group.horario.split(":").map(Number);
+                dtStartFull = `${dtStart}T${pad(h)}${pad(m)}00`;
+                dtEndFull = `${dtStart}T${pad(h + 2)}${pad(m)}00`;
+              } else {
+                dtStartFull = dtStart;
+                dtEndFull = `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate() + 1)}`;
+              }
+              const ics = [
+                "BEGIN:VCALENDAR",
+                "VERSION:2.0",
+                "PRODID:-//BitDevs Brasil//BR//PT",
+                "BEGIN:VEVENT",
+                e.group.horario
+                  ? `DTSTART:${dtStartFull}`
+                  : `DTSTART;VALUE=DATE:${dtStartFull}`,
+                e.group.horario
+                  ? `DTEND:${dtEndFull}`
+                  : `DTEND;VALUE=DATE:${dtEndFull}`,
+                `SUMMARY:${e.group.nome}`,
+                `DESCRIPTION:${e.group.notes || ""}`,
+                `LOCATION:${e.group.cidade} - ${e.group.estado}`,
+                "END:VEVENT",
+                "END:VCALENDAR",
+              ].join("\r\n");
+              const blob = new Blob([ics], {
+                type: "text/calendar",
+              });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement("a");
+              a.href = url;
+              a.download = `${e.group.id}-${dtStart}.ics`;
+              a.click();
+              URL.revokeObjectURL(url);
+            });
 
-            function renderAssinantes(assinantes, filterLabel) {
-                const container = document.getElementById("assinantes");
-                if (!assinantes.length && !filterLabel) return;
+            const assBtn = document.createElement("a");
+            assBtn.className = "event-link";
+            assBtn.textContent = "assinantes";
+            assBtn.href = "#";
+            assBtn.addEventListener("click", (ev) => {
+              ev.preventDefault();
+              filterAssinantes(e.group.id);
+              document
+                .getElementById("assinantes")
+                .scrollIntoView({ behavior: "smooth" });
+            });
 
-                container.style.display = "block";
-                container.innerHTML = "";
-                container.classList.remove("expanded");
+            const btns = document.createElement("div");
+            btns.className = "event-btns";
+            if (e.group.linktopicos) btns.appendChild(link);
+            btns.appendChild(icsBtn);
+            btns.appendChild(assBtn);
 
-                const header = document.createElement("div");
-                header.className = "assinantes-header";
-                if (filterLabel) {
-                    header.innerHTML = `Assinantes <span class="assinantes-desc">filtrando por ${filterLabel}</span>`;
-                    const clearBtn = document.createElement("button");
-                    clearBtn.className = "assinantes-filter-clear";
-                    clearBtn.textContent = "limpar filtro";
-                    clearBtn.addEventListener("click", () => {
-                        renderAssinantes(allAssinantes);
-                    });
-                    header.appendChild(clearBtn);
-                } else {
-                    header.innerHTML = `Assinantes <span class="assinantes-desc">Pessoas que assinaram e confirmam que as datas dos BitDevs estão corretas</span>`;
-                }
-                container.appendChild(header);
+            row.appendChild(dateEl);
+            row.appendChild(dot);
+            row.appendChild(info);
+            row.appendChild(btns);
 
-                if (!assinantes.length) {
-                    const empty = document.createElement("div");
-                    empty.style.cssText =
-                        "padding:24px 40px;color:var(--muted)";
-                    empty.textContent = "nenhum assinante para este BitDev.";
-                    container.appendChild(empty);
-                    return;
-                }
+            div.appendChild(row);
+          }
 
-                const track = document.createElement("div");
-                track.className = "assinantes-track";
+          timeline.appendChild(div);
+        }
+      }
 
-                function addCard(a) {
-                    const card = document.createElement("div");
-                    card.className = "assinante-card";
-                    const fp = a.chave_pgp || "—";
-                    card.innerHTML = `
+      function filterAssinantes(bitdevId) {
+        const filtered = allAssinantes.filter(
+          (a) => a.bitdevs_ids && a.bitdevs_ids.includes(bitdevId),
+        );
+        const group = allGroups.find((g) => g.id === bitdevId);
+        const label = group ? group.cidade : bitdevId;
+        renderAssinantes(filtered, label);
+      }
+
+      function renderAssinantes(assinantes, filterLabel) {
+        const container = document.getElementById("assinantes");
+        if (!assinantes.length && !filterLabel) return;
+
+        container.style.display = "block";
+        container.innerHTML = "";
+        container.classList.remove("expanded");
+
+        const header = document.createElement("div");
+        header.className = "assinantes-header";
+        if (filterLabel) {
+          header.innerHTML = `Assinantes <span class="assinantes-desc">filtrando por ${filterLabel}</span>`;
+          const clearBtn = document.createElement("button");
+          clearBtn.className = "assinantes-filter-clear";
+          clearBtn.textContent = "limpar filtro";
+          clearBtn.addEventListener("click", () => {
+            renderAssinantes(allAssinantes);
+          });
+          header.appendChild(clearBtn);
+        } else {
+          header.innerHTML = `Assinantes <span class="assinantes-desc">Pessoas que assinaram e confirmam que as datas dos BitDevs estão corretas</span>`;
+        }
+        container.appendChild(header);
+
+        if (!assinantes.length) {
+          const empty = document.createElement("div");
+          empty.style.cssText = "padding:24px 40px;color:var(--muted)";
+          empty.textContent = "nenhum assinante para este BitDev.";
+          container.appendChild(empty);
+          return;
+        }
+
+        const track = document.createElement("div");
+        track.className = "assinantes-track";
+
+        function addCard(a) {
+          const card = document.createElement("div");
+          card.className = "assinante-card";
+          const fp = a.chave_pgp || "—";
+          card.innerHTML = `
                         <img class="assinante-avatar" src="https://github.com/${a.nome}.png" alt="${a.nome}" loading="lazy" />
                         <div class="assinante-info">
                             <a class="assinante-user" href="https://github.com/${a.nome}" target="_blank">${a.nome}</a>
                             <span class="assinante-fp">${fp}</span>
                         </div>
                     `;
-                    track.appendChild(card);
-                }
+          track.appendChild(card);
+        }
 
-                // Preencher pelo menos 2x a largura da tela para loop seamless
-                const screenWidth = window.innerWidth;
-                let filled = 0;
-                while (filled < screenWidth * 2) {
-                    for (const a of assinantes) {
-                        addCard(a);
-                    }
-                    container.appendChild(track);
-                    filled = track.scrollWidth;
-                }
-                // Duplicar tudo para o loop infinito
-                const halfCount = track.children.length;
-                for (let i = 0; i < halfCount; i++) {
-                    track.appendChild(track.children[i].cloneNode(true));
-                }
+        // Preencher pelo menos 2x a largura da tela para loop seamless
+        const screenWidth = window.innerWidth;
+        let filled = 0;
+        while (filled < screenWidth * 2) {
+          for (const a of assinantes) {
+            addCard(a);
+          }
+          container.appendChild(track);
+          filled = track.scrollWidth;
+        }
+        // Duplicar tudo para o loop infinito
+        const halfCount = track.children.length;
+        for (let i = 0; i < halfCount; i++) {
+          track.appendChild(track.children[i].cloneNode(true));
+        }
 
-                container.appendChild(track);
+        container.appendChild(track);
 
-                const speed = 5;
-                const halfWidth = track.scrollWidth / 2;
-                const duration = halfWidth / speed;
-                track.style.animationDuration = `${duration}s`;
+        const speed = 5;
+        const halfWidth = track.scrollWidth / 2;
+        const duration = halfWidth / speed;
+        track.style.animationDuration = `${duration}s`;
 
-                // Lista expandida
-                const list = document.createElement("div");
-                list.className = "assinantes-list";
-                for (const a of assinantes) {
-                    const row = document.createElement("div");
-                    row.className = "assinante-list-row";
-                    const fp = a.chave_pgp || "—";
-                    row.innerHTML = `
+        // Lista expandida
+        const list = document.createElement("div");
+        list.className = "assinantes-list";
+        for (const a of assinantes) {
+          const row = document.createElement("div");
+          row.className = "assinante-list-row";
+          const fp = a.chave_pgp || "—";
+          row.innerHTML = `
                         <img class="assinante-avatar" src="https://github.com/${a.nome}.png" alt="${a.nome}" loading="lazy" />
                         <div class="assinante-info">
                             <a class="assinante-user" href="https://github.com/${a.nome}" target="_blank">${a.nome}</a>
                             <span class="assinante-fp">${fp}</span>
                         </div>
                     `;
-                    list.appendChild(row);
-                }
-                container.appendChild(list);
+          list.appendChild(row);
+        }
+        container.appendChild(list);
 
-                const toggleBtn = document.createElement("button");
-                toggleBtn.className = "assinantes-toggle";
-                toggleBtn.textContent = "ver todos";
-                toggleBtn.addEventListener("click", () => {
-                    const expanded = container.classList.toggle("expanded");
-                    toggleBtn.textContent = expanded ? "recolher" : "ver todos";
-                });
-                container.appendChild(toggleBtn);
-            }
+        const toggleBtn = document.createElement("button");
+        toggleBtn.className = "assinantes-toggle";
+        toggleBtn.textContent = "ver todos";
+        toggleBtn.addEventListener("click", () => {
+          const expanded = container.classList.toggle("expanded");
+          toggleBtn.textContent = expanded ? "recolher" : "ver todos";
+        });
+        container.appendChild(toggleBtn);
+      }
 
-            async function init() {
-                const loading = document.getElementById("loading");
-                const timeline = document.getElementById("timeline");
+      async function init() {
+        const loading = document.getElementById("loading");
+        const timeline = document.getElementById("timeline");
 
-                let groups;
-                try {
-                    const res = await fetch("bitdevs.json");
-                    groups = await res.json();
-                } catch (e) {
-                    loading.textContent = "erro ao carregar bitdevs.json";
-                    return;
-                }
+        let groups;
+        try {
+          const res = await fetch("bitdevs.json");
+          groups = await res.json();
+        } catch (e) {
+          loading.textContent = "erro ao carregar bitdevs.json";
+          return;
+        }
 
-                allGroups = groups;
-                activeGroups = new Set(groups.map((g) => g.id));
+        allGroups = groups;
+        activeGroups = new Set(groups.map((g) => g.id));
 
-                loading.style.display = "none";
-                timeline.style.display = "block";
+        loading.style.display = "none";
+        timeline.style.display = "block";
 
-                function renderLegend(events) {
-                    const legend = document.getElementById("legend");
-                    legend.innerHTML = "";
-                    const activeIds = new Set(events.map((e) => e.group.id));
-                    groups.forEach((g, i) => {
-                        if (!activeIds.has(g.id)) return;
-                        const color = PALETTE[i % PALETTE.length];
-                        const item = document.createElement("div");
-                        item.className = "legend-item";
-                        item.dataset.id = g.id;
-                        if (!activeGroups.has(g.id))
-                            item.classList.add("inactive");
-                        item.innerHTML = `<div class="legend-dot" style="background:${color}"></div>${g.cidade}`;
-                        item.addEventListener("click", () => {
-                            if (activeGroups.has(g.id)) {
-                                activeGroups.delete(g.id);
-                                item.classList.add("inactive");
-                            } else {
-                                activeGroups.add(g.id);
-                                item.classList.remove("inactive");
-                            }
-                            const evts = generateEvents(allGroups, months);
-                            render(allGroups, evts);
-                        });
-                        legend.appendChild(item);
-                    });
-                }
+        function renderLegend(events) {
+          const legend = document.getElementById("legend");
+          legend.innerHTML = "";
+          const activeIds = new Set(events.map((e) => e.group.id));
+          groups.forEach((g, i) => {
+            if (!activeIds.has(g.id)) return;
+            const color = PALETTE[i % PALETTE.length];
+            const item = document.createElement("div");
+            item.className = "legend-item";
+            item.dataset.id = g.id;
+            if (!activeGroups.has(g.id)) item.classList.add("inactive");
+            item.innerHTML = `<div class="legend-dot" style="background:${color}"></div>${g.cidade}`;
+            item.addEventListener("click", () => {
+              if (activeGroups.has(g.id)) {
+                activeGroups.delete(g.id);
+                item.classList.add("inactive");
+              } else {
+                activeGroups.add(g.id);
+                item.classList.remove("inactive");
+              }
+              const evts = generateEvents(allGroups, months);
+              render(allGroups, evts);
+            });
+            legend.appendChild(item);
+          });
+        }
 
-                const evts = generateEvents(allGroups, months);
-                renderLegend(evts);
-                render(allGroups, evts);
+        const evts = generateEvents(allGroups, months);
+        renderLegend(evts);
+        render(allGroups, evts);
 
-                try {
-                    const assinanteRes = await fetch("assinantes.json");
-                    allAssinantes = await assinanteRes.json();
-                    renderAssinantes(allAssinantes);
-                } catch (e) {}
-            }
+        try {
+          const assinanteRes = await fetch("assinantes.json");
+          allAssinantes = await assinanteRes.json();
+          renderAssinantes(allAssinantes);
+        } catch (e) {}
+      }
 
-            init();
-        </script>
-    </body>
+      init();
+    </script>
+  </body>
 </html>

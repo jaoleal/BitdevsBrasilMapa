@@ -82,6 +82,55 @@
             '';
           };
 
+          fmt = pkgs.writeShellApplication {
+            name = "fmt";
+            runtimeInputs = [
+              pkgs.prettier
+              pkgs.nixfmt
+              pkgs.findutils
+            ];
+            text = ''
+              echo "Formatando JSON, YAML, CSS, HTML..."
+              prettier --write '**/*.json' '**/*.yml' '**/*.css' '**/*.html' \
+                --ignore-path .gitignore 2>/dev/null || true
+
+              echo "Formatando Nix..."
+              find . -name '*.nix' -exec nixfmt {} +
+
+              echo "Formatação concluída"
+            '';
+          };
+
+          fmt-check = pkgs.writeShellApplication {
+            name = "fmt-check";
+            runtimeInputs = [
+              pkgs.prettier
+              pkgs.nixfmt
+              pkgs.findutils
+            ];
+            text = ''
+              errors=0
+
+              echo "Verificando formatação JSON, YAML, CSS, HTML..."
+              if ! prettier --check '**/*.json' '**/*.yml' '**/*.css' '**/*.html' \
+                --ignore-path .gitignore 2>/dev/null; then
+                errors=$((errors + 1))
+              fi
+
+              echo "Verificando formatação Nix..."
+              if ! find . -name '*.nix' -exec nixfmt --check {} +; then
+                errors=$((errors + 1))
+              fi
+
+              if [[ $errors -gt 0 ]]; then
+                echo "ERRO: arquivos não formatados. Rode 'nix run .#fmt' para corrigir."
+                exit 1
+              fi
+
+              echo "Formatação OK"
+            '';
+          };
+
           verificar-assinaturas = pkgs.writeShellApplication {
             name = "verificar-assinaturas";
             runtimeInputs = [
@@ -171,6 +220,16 @@
             program = "${verificar-assinaturas}/bin/verificar-assinaturas";
           };
 
+          apps.fmt = {
+            type = "app";
+            program = "${fmt}/bin/fmt";
+          };
+
+          apps.fmt-check = {
+            type = "app";
+            program = "${fmt-check}/bin/fmt-check";
+          };
+
           checks.validate-bitdevs = pkgs.runCommand "validate-bitdevs" { } ''
             cd ${./.}
             ${validate-bitdevs}/bin/validate-bitdevs bitdevs.json
@@ -195,10 +254,18 @@
                 touch $out
               '';
 
+          checks.fmt = pkgs.runCommand "fmt-check" { } ''
+            cd ${./.}
+            ${fmt-check}/bin/fmt-check
+            touch $out
+          '';
+
           devShells.default = pkgs.mkShell {
             packages = [
               pkgs.python3Packages.livereload
               pkgs.jq
+              pkgs.prettier
+              pkgs.nixfmt
             ];
 
             shellHook = ''
