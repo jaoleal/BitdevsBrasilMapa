@@ -2,10 +2,10 @@ name: Validate bitdevs.json
 
 on:
   pull_request:
-    paths: [bitdevs.json]
+    paths: [bitdevs.json, flake.nix]
   push:
     branches: [master]
-    paths: [bitdevs.json]
+    paths: [bitdevs.json, flake.nix]
 
 jobs:
   validate:
