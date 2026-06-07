@@ -91,16 +91,16 @@ O fingerprint eh a string de 40 caracteres hexadecimais, ex: `79F498EF30E0E2F32A
 
 ### Passo 2: Publicar sua chave
 
-Sua chave publica precisa estar disponivel para que outros possam verificar sua assinatura. A forma mais simples eh adicionar ao seu perfil do GitHub:
+Sua chave publica precisa estar disponivel para que outros possam verificar sua assinatura.
 
-1. Exporte sua chave publica:
+1. Exporte sua chave publica para o repositorio:
    ```sh
-   gpg --armor --export seu-email@exemplo.com
+   gpg --armor --export seu-email@exemplo.com > chaves/seu-usuario.asc
    ```
-2. Va em **GitHub > Settings > SSH and GPG keys > New GPG key**
-3. Cole a chave publica e salve
-
-Apos isso, sua chave ficara disponivel em `https://github.com/seu-usuario.gpg`.
+2. (Recomendado) Publique tambem no GitHub para servir como fallback:
+   - Va em **GitHub > Settings > SSH and GPG keys > New GPG key**
+   - Cole a chave publica e salve
+   - Apos isso, sua chave ficara disponivel em `https://github.com/seu-usuario.gpg`
 
 ### Passo 3: Assinar um BitDev
 
@@ -140,8 +140,9 @@ O avatar e o link para seu perfil sao derivados automaticamente do `nome`.
 
 Seu PR deve conter:
 
-1. Os arquivos `.asc` em `assinaturas/<id>/seu-usuario.asc` para cada BitDev assinado
-2. Sua entrada adicionada no `assinantes.json`
+1. Sua chave publica em `chaves/seu-usuario.asc`
+2. Os arquivos `.asc` em `assinaturas/<id>/seu-usuario.asc` para cada BitDev assinado
+3. Sua entrada adicionada no `assinantes.json`
 
 O CI vai verificar automaticamente se suas assinaturas sao validas contra as entradas correspondentes no `bitdevs.json`. Se alguma assinatura for invalida, o CI vai falhar.
 
@@ -150,8 +151,8 @@ O CI vai verificar automaticamente se suas assinaturas sao validas contra as ent
 Para verificar manualmente se uma assinatura eh valida:
 
 ```sh
-# Importe a chave publica do assinante (se necessario)
-curl -s https://github.com/seu-usuario.gpg | gpg --import
+# Importe a chave publica do assinante (local, sem internet)
+gpg --import chaves/seu-usuario.asc
 
 # Verifique a assinatura
 jq '.[] | select(.id == "sp")' bitdevs.json \
